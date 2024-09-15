@@ -14,6 +14,7 @@
 #include <game/Common.h>
 #include <game/CModelInfo.h>
 #include "CRenderWareSA.h"
+#include "C2DEffectSAInterface.h"
 
 class CPedModelInfoSA;
 class CPedModelInfoSAInterface;
@@ -62,6 +63,8 @@ static void* ARRAY_ModelInfo = *(void**)(0x403DA4 + 3);
 #define     FUNC_CVehicleModelInfo__GetNumRemaps        0x4C86B0
 
 #define     VAR_CTempColModels_ModelPed1    0x968DF0
+
+#define FUNC_CBaseModelInfo_Add2dEffect 0x4C4D20
 
 class CBaseModelInfoSAInterface;
 class CModelInfoSAInterface
@@ -158,7 +161,7 @@ public:
     unsigned char  ucAlpha : 8;                         // +12
 
     unsigned char  ucNumOf2DEffects : 8;            // +13
-    unsigned short usUnknown : 16;                  // +14     Something with 2d effects
+    short          s2DEffectIndex : 16;            // +14 
 
     unsigned short usDynamicIndex : 16;            // +16
 
@@ -465,6 +468,9 @@ public:
 
     // Vehicle towing functions
     bool IsTowableBy(CModelInfo* towingModel) override;
+
+    // 2DFX functions
+    C2DEffectSAInterface* Add2DFXEffect(const CVector& position, const e2dEffectType& type);
 
     bool IsDynamic() { return m_pInterface ? m_pInterface->usDynamicIndex != 0xffff : false; };
 

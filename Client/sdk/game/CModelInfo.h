@@ -20,6 +20,7 @@ class CColModel;
 class CPedModelInfo;
 struct RpClump;
 struct RwObject;
+class C2DEffectSAInterface;
 
 class CBoundingBox
 {
@@ -82,6 +83,53 @@ enum eVehicleUpgradePosn
     VEHICLE_UPGRADE_POSN_FRONT_BUMPER,
     VEHICLE_UPGRADE_POSN_REAR_BUMPER,
     VEHICLE_UPGRADE_POSN_MISC,
+};
+
+enum class e2dEffectType : std::uint8_t
+{
+    LIGHT = 0,
+    PARTICLE,
+    ATTRACTOR,
+    SUN_GLARE,
+    FURNITURE,
+    ENEX,
+    ROADSIGN,
+    TRIGGER_POINT,
+    COVER_POINT,
+    ESCALATOR,
+};
+
+enum class e2dCoronaFlashType : std::uint8_t
+{
+    DEFAULT = 0,
+    RANDOM,
+    RANDOM_WHEN_WET,
+    ANIM_SPEED_4X,
+    ANIM_SPEED_2X,
+    ANIM_SPEED_1X,
+    WARNLIGHT, // Used on model nt_roadblockci
+    TRAFFICLIGHT,
+    TRAINCROSSING,
+    UNUSED,
+    ONLY_RAIN,
+    ON5_OFF5,
+    ON6_OFF4,
+    ON4_OFF6,
+};
+
+enum class e2dAttractorType : std::int8_t
+{
+    UNDEFINED = -1,
+    ATM = 0,
+    SEAT,
+    STOP,
+    PIZZA,
+    SHELTER,
+    TRIGGER_SCRIPT,
+    LOOK_AT,
+    SCRIPTED,
+    PARK,
+    STEP,
 };
 
 struct SVehicleSupportedUpgrades
@@ -246,6 +294,9 @@ public:
 
     // Vehicle towing functions
     virtual bool IsTowableBy(CModelInfo* towingModel) = 0;
+
+    // 2dfx functions
+    virtual C2DEffectSAInterface* Add2DFXEffect(const CVector& position, const e2dEffectType& type) = 0;
 
     virtual unsigned int GetParentID() = 0;
     virtual bool         IsDynamic() = 0;

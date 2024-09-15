@@ -146,7 +146,8 @@ void CLuaEngineDefs::LoadFunctions()
         {"engineGetPoolUsedCapacity", ArgumentParser<EngineGetPoolUsedCapacity>},
         {"engineSetPoolCapacity", ArgumentParser<EngineSetPoolCapacity>},
         {"enginePreloadWorldArea", ArgumentParser<EnginePreloadWorldArea>},
-        
+        {"engineAddModel2DFX", ArgumentParser<EngineAddModel2DFX>},
+
         // CLuaCFunctions::AddFunction ( "engineReplaceMatchingAtomics", EngineReplaceMatchingAtomics );
         // CLuaCFunctions::AddFunction ( "engineReplaceWheelAtomics", EngineReplaceWheelAtomics );
         // CLuaCFunctions::AddFunction ( "enginePositionAtomic", EnginePositionAtomic );
@@ -2559,4 +2560,24 @@ void CLuaEngineDefs::EnginePreloadWorldArea(CVector position, std::optional<Prel
 
     if (option == PreloadAreaOption::ALL || option == PreloadAreaOption::COLLISIONS)
         g_pGame->GetStreaming()->LoadSceneCollision(&position);
+}
+
+std::variant<bool, CClient2DFX*> CLuaEngineDefs::EngineAddModel2DFX(lua_State* luaVM, std::uint32_t modelID, CVector position, e2dEffectType effectType, std::unordered_map<std::string, std::variant<bool, float, std::string>> effectData)
+{
+    if (!CClientObjectManager::IsValidModel(modelID) && !CClientVehicleManager::IsValidModel(modelID) && !CClientBuildingManager::IsValidModel(modelID))
+        throw std::invalid_argument("Invalid model ID");
+
+    const char* error = CClient2DFXManager::IsValidEffectData(effectType, effectData);
+    if (error)
+        throw std::invalid_argument(error);
+
+    CClient2DFX* effect = m_p2DFXManager->Add2DFX(modelID, position, effectType, effectData);
+    if (!effect)
+        return false;
+
+    CResource* resource = &lua_getownerresource(luaVM);
+    if (resource)
+        effect->SetParent(resource->GetResource2DFXRoot());
+
+    return effect;
 }

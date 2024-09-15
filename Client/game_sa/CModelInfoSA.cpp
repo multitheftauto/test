@@ -1735,7 +1735,7 @@ void CModelInfoSA::MakeObjectModel(ushort usBaseID)
     MemCpyFast(m_pInterface, pBaseObjectInfo, sizeof(CBaseModelInfoSAInterface));
     m_pInterface->usNumberOfRefs = 0;
     m_pInterface->pRwObject = nullptr;
-    m_pInterface->usUnknown = 65535;
+    m_pInterface->s2DEffectIndex = -1;
     m_pInterface->usDynamicIndex = 65535;
 
     ppModelInfo[m_dwModelID] = m_pInterface;
@@ -1752,7 +1752,7 @@ void CModelInfoSA::MakeTimedObjectModel(ushort usBaseID)
     MemCpyFast(m_pInterface, pBaseObjectInfo, sizeof(CTimeModelInfoSAInterface));
     m_pInterface->usNumberOfRefs = 0;
     m_pInterface->pRwObject = nullptr;
-    m_pInterface->usUnknown = 65535;
+    m_pInterface->s2DEffectIndex = -1;
     m_pInterface->usDynamicIndex = 65535;
     m_pInterface->timeInfo.m_wOtherTimeModel = 0;
 
@@ -1769,7 +1769,7 @@ void CModelInfoSA::MakeClumpModel(ushort usBaseID)
     MemCpyFast(pNewInterface, pBaseObjectInfo, sizeof(CClumpModelInfoSAInterface));
     pNewInterface->usNumberOfRefs = 0;
     pNewInterface->pRwObject = nullptr;
-    pNewInterface->usUnknown = 65535;
+    pNewInterface->s2DEffectIndex = -1;
     pNewInterface->usDynamicIndex = 65535;
 
     ppModelInfo[m_dwModelID] = pNewInterface;
@@ -1787,7 +1787,7 @@ void CModelInfoSA::MakeVehicleAutomobile(ushort usBaseID)
     m_pInterface->usNumberOfRefs = 0;
     m_pInterface->pRwObject = nullptr;
     m_pInterface->pVisualInfo = nullptr;
-    m_pInterface->usUnknown = 65535;
+    m_pInterface->s2DEffectIndex = -1;
     m_pInterface->usDynamicIndex = 65535;
 
     ppModelInfo[m_dwModelID] = m_pInterface;
@@ -2062,6 +2062,29 @@ bool CModelInfoSA::IsTowableBy(CModelInfo* towingModel)
     }
 
     return isTowable;
+}
+
+C2DEffectSAInterface* CModelInfoSA::Add2DFXEffect(const CVector& position, const e2dEffectType& type)
+{
+    // Get 2DFX store
+    auto* effectStore = reinterpret_cast<C2DEffectInfoStoreSAInterface*>(ARRAY_2DFXInfoStore);
+
+    // Add item
+    C2DEffectSAInterface& obj = effectStore->objects[effectStore->objCount];
+    ++effectStore->objCount;
+
+    // Call CBaseModelInfo::Add2dEffect
+    ((void(__thiscall*)(CBaseModelInfoSAInterface*, C2DEffectSAInterface*))FUNC_CBaseModelInfo_Add2dEffect)(m_pInterface, &obj);
+
+    // Init
+    obj.position = RwV3d{position.fX, position.fY, position.fZ};
+    obj.type = type;
+ 
+    // modelid = 1337 x = 0.1 y = 0.1 z = 0.75 type = 0 r = 52 g = 177 b = 235 a = 255 corona_name = corona star shadow_name = shad_exp farClip = 100 pointLRange = 18 coronaSize = 2 shadowSize = 10 shadowMultiplier = 40 showMode = 0 enableReflection = 0 flareType = 0 flags = 96, zDist = 0 offX = 0 offY = 0 offZ = 0
+    //char* line = "1337 0.1 0.1 0.75 0 52 177 235 255 \"coronastar\" \"shad_exp\" 100 18 2 10 40 0 0 0 96 0 0 0 0";
+    //((void(__cdecl*)(char* line))0x5B7670)(line);
+
+    return &obj;
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////

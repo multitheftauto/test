@@ -94,6 +94,8 @@ public:
 
     static void EnginePreloadWorldArea(CVector position, std::optional<PreloadAreaOption> option);
 
+    static std::variant<bool, CClient2DFX*> EngineAddModel2DFX(lua_State* luaVM, std::uint32_t modelID, CVector position, e2dEffectType effectType, std::unordered_map<std::string, std::variant<bool, float, std::string>> effectData);
+
 private:
     static void AddEngineColClass(lua_State* luaVM);
     static void AddEngineTxdClass(lua_State* luaVM);
