@@ -332,6 +332,7 @@ protected:
     static std::unordered_map<DWORD, unsigned short>                             ms_OriginalObjectPropertiesGroups;
     static std::unordered_map<DWORD, std::pair<float, float>>                    ms_VehicleModelDefaultWheelSizes;
     static std::map<unsigned short, int>                                         ms_DefaultTxdIDMap;
+    static std::map<std::uint16_t, C2DEffectSAInterface*>                        d2fxEffects;
     SVehicleSupportedUpgrades                                                    m_ModelSupportedUpgrades;
 
 public:
@@ -455,6 +456,8 @@ public:
     void         MakeClumpModel(ushort usBaseModelID);
     void         DeallocateModel(void);
     unsigned int GetParentID() { return m_dwParentID; };
+
+    static void HOOK_Get2dEffect();
 
     SVehicleSupportedUpgrades GetVehicleSupportedUpgrades() { return m_ModelSupportedUpgrades; }
 

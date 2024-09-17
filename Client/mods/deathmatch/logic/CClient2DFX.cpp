@@ -44,7 +44,7 @@ bool CClient2DFX::Create(std::uint32_t model, const CVector& position, const e2d
     ((void(__cdecl*)())0x7316A0)();
 
     // Find txd slot
-    int slot = ((int(__fastcall*)(int,int,char*))0x731850)(0,0,"particle");
+    int slot = ((int(__cdecl*)(const char*))0x731850)("particle");
 
     // Set txd slot
     ((void(__cdecl*)(int))0x7319C0)(slot);
@@ -196,8 +196,6 @@ bool CClient2DFX::Create(std::uint32_t model, const CVector& position, const e2d
 
     // Pop current txd
     ((void(__cdecl*)())0x7316B0)();
-
-    auto* createdEffect = ((C2DEffectSAInterface * (__thiscall*)(CBaseModelInfoSAInterface*, int))0x4C4C70)(modelInfo->GetInterface(), 0);
 
     return true;
 }

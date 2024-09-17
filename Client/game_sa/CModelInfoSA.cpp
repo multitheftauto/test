@@ -35,6 +35,7 @@ std::map<CTimeInfoSAInterface*, CTimeInfoSAInterface*>                CModelInfo
 std::unordered_map<DWORD, unsigned short>                             CModelInfoSA::ms_OriginalObjectPropertiesGroups;
 std::unordered_map<DWORD, std::pair<float, float>>                    CModelInfoSA::ms_VehicleModelDefaultWheelSizes;
 std::map<unsigned short, int>                                         CModelInfoSA::ms_DefaultTxdIDMap;
+std::map<std::uint16_t, C2DEffectSAInterface*>                        CModelInfoSA::d2fxEffects;
 
 union tIdeFlags
 {
@@ -1867,6 +1868,49 @@ void _declspec(naked) HOOK_NodeNameStreamRead()
     }
 }
 
+#define HOOKPOS_Get2dEffect 0x4C4CD8
+#define HOOKSIZE_Get2dEffect 6
+static constexpr DWORD RETURN_CBaseModelInfo_Get2dEffect = 0x4C4CDE;
+int                    index = -1;
+int                    count = 0;
+int offset = *(int*)0xC3A1E0;
+void _declspec(naked) CModelInfoSA::HOOK_Get2dEffect()
+{
+
+    _asm
+    {
+        mov esi, [esp+8+0xC]
+        pushad
+        mov index, esi
+        mov count, ebp
+    }
+
+    if (index > count * 64 + offset)
+    {
+        // return from vector
+        auto* effect = MapGet(d2fxEffects, index);
+        _asm
+        {
+            popad
+            mov eax, effect
+            pop edi
+            pop esi
+            pop ebp
+            pop ebx
+            retn 4
+        }
+    }
+    else
+    {
+        _asm
+        {
+            popad
+            cmp esi, ebp
+            jmp RETURN_CBaseModelInfo_Get2dEffect
+        }
+    }
+}
+
 //////////////////////////////////////////////////////////////////////////////////////////
 //
 // Setup hooks
@@ -1875,6 +1919,7 @@ void _declspec(naked) HOOK_NodeNameStreamRead()
 void CModelInfoSA::StaticSetHooks()
 {
     EZHookInstall(NodeNameStreamRead);
+    EZHookInstall(Get2dEffect);
 }
 
 // Recursive RwFrame children searching function
@@ -2066,12 +2111,34 @@ bool CModelInfoSA::IsTowableBy(CModelInfo* towingModel)
 
 C2DEffectSAInterface* CModelInfoSA::Add2DFXEffect(const CVector& position, const e2dEffectType& type)
 {
+    // Init new effect
+    C2DEffectSAInterface* effectInterface = new C2DEffectSAInterface();
+    effectInterface->position = RwV3d{position.fX, position.fY, position.fZ};
+    effectInterface->type = type;
+
+    // Call CBaseModelInfo::Add2dEffect
+    //((void(__thiscall*)(CBaseModelInfoSAInterface*, C2DEffectSAInterface*))FUNC_CBaseModelInfo_Add2dEffect)(m_pInterface, effectInterface);
+    m_pInterface->s2DEffectIndex = -1;
+
+    if (m_pInterface->ucNumOf2DEffects)
+        m_pInterface->ucNumOf2DEffects++;
+    else
+        m_pInterface->ucNumOf2DEffects = 1;
+
+    // Save our effect
+    MapSet(d2fxEffects, m_dwModelID, effectInterface);
+
+    return effectInterface;
+
+    //*(g2dEffectPluginOffset + a3) = _dataAllocatedForAll2dfx;
+
+    /*
     // Get 2DFX store
     auto* effectStore = reinterpret_cast<C2DEffectInfoStoreSAInterface*>(ARRAY_2DFXInfoStore);
 
     // Add item
-    C2DEffectSAInterface& obj = effectStore->objects[effectStore->objCount];
-    ++effectStore->objCount;
+    //C2DEffectSAInterface& obj = effectStore->objects[effectStore->objCount];
+    //effectStore->objCount++;
 
     // Call CBaseModelInfo::Add2dEffect
     ((void(__thiscall*)(CBaseModelInfoSAInterface*, C2DEffectSAInterface*))FUNC_CBaseModelInfo_Add2dEffect)(m_pInterface, &obj);
@@ -2079,12 +2146,16 @@ C2DEffectSAInterface* CModelInfoSA::Add2DFXEffect(const CVector& position, const
     // Init
     obj.position = RwV3d{position.fX, position.fY, position.fZ};
     obj.type = type;
- 
+
+    // Set special flags
+    //m_pInterface->usFlags |= 0x2000;
+
+
     // modelid = 1337 x = 0.1 y = 0.1 z = 0.75 type = 0 r = 52 g = 177 b = 235 a = 255 corona_name = corona star shadow_name = shad_exp farClip = 100 pointLRange = 18 coronaSize = 2 shadowSize = 10 shadowMultiplier = 40 showMode = 0 enableReflection = 0 flareType = 0 flags = 96, zDist = 0 offX = 0 offY = 0 offZ = 0
     //char* line = "1337 0.1 0.1 0.75 0 52 177 235 255 \"coronastar\" \"shad_exp\" 100 18 2 10 40 0 0 0 96 0 0 0 0";
     //((void(__cdecl*)(char* line))0x5B7670)(line);
 
-    return &obj;
+    return &obj;*/
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////
