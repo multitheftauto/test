@@ -390,7 +390,7 @@ public:
     static void    StaticResetLodDistances();
     void           RestreamIPL();
     static void    StaticFlushPendingRestreamIPL();
-    static void           StaticSetHooks();
+    static void    StaticSetHooks();
     bool           GetTime(char& cHourOn, char& cHourOff);
     bool           SetTime(char cHourOn, char cHourOff);
     static void    StaticResetModelTimes();
@@ -478,7 +478,7 @@ public:
     C2DEffectSAInterface* Get2DFXFromIndex(std::uint32_t index);
     std::uint32_t         Get2DFXCount() const { return m_pInterface ? m_pInterface->ucNumOf2DEffects : 0; }
 
-    void StoreDefault2DFXEffect(C2DEffectSAInterface* effect);
+    void        StoreDefault2DFXEffect(C2DEffectSAInterface* effect);
     bool        Reset2DFXEffects(bool removeCustomEffects = false);
     static void StaticReset2DFXEffects();
 
