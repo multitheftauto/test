@@ -64,7 +64,7 @@ static void* ARRAY_ModelInfo = *(void**)(0x403DA4 + 3);
 
 #define     VAR_CTempColModels_ModelPed1    0x968DF0
 
-#define FUNC_CBaseModelInfo_Add2dEffect 0x4C4D20
+#define     FUNC_CBaseModelInfo_Get2dEffect 0x4C4C70
 
 class CBaseModelInfoSAInterface;
 class CModelInfoSAInterface
@@ -332,8 +332,8 @@ protected:
     static std::unordered_map<DWORD, unsigned short>                             ms_OriginalObjectPropertiesGroups;
     static std::unordered_map<DWORD, std::pair<float, float>>                    ms_VehicleModelDefaultWheelSizes;
     static std::map<unsigned short, int>                                         ms_DefaultTxdIDMap;
-    static std::map<std::uint16_t, C2DEffectSAInterface*>                        d2fxEffects;
     SVehicleSupportedUpgrades                                                    m_ModelSupportedUpgrades;
+    static std::unordered_map<DWORD, std::unordered_map<C2DEffectSAInterface*, C2DEffectSAInterface*>> CModelInfoSA::ms_DefaultEffectsMap;
 
 public:
     CModelInfoSA();
@@ -390,7 +390,7 @@ public:
     static void    StaticResetLodDistances();
     void           RestreamIPL();
     static void    StaticFlushPendingRestreamIPL();
-    static void    StaticSetHooks();
+    static void           StaticSetHooks();
     bool           GetTime(char& cHourOn, char& cHourOff);
     bool           SetTime(char cHourOn, char cHourOff);
     static void    StaticResetModelTimes();
@@ -444,7 +444,7 @@ public:
     // Decreases the collision slot reference counter for the original collision model
     void RemoveColRef() override;
 
-    void SetModelID(DWORD dwModelID) { m_dwModelID = dwModelID; }
+    void SetModelID(DWORD dwModelID);
 
     RwObject* GetRwObject() { return m_pInterface ? m_pInterface->pRwObject : NULL; }
 
@@ -456,8 +456,6 @@ public:
     void         MakeClumpModel(ushort usBaseModelID);
     void         DeallocateModel(void);
     unsigned int GetParentID() { return m_dwParentID; };
-
-    static void HOOK_Get2dEffect();
 
     SVehicleSupportedUpgrades GetVehicleSupportedUpgrades() { return m_ModelSupportedUpgrades; }
 
@@ -474,6 +472,15 @@ public:
 
     // 2DFX functions
     C2DEffectSAInterface* Add2DFXEffect(const CVector& position, const e2dEffectType& type);
+    void                  Remove2DFX(C2DEffectSAInterface* effect, bool isCustom = false);
+    bool                  Remove2DFXEffectAtIndex(std::uint32_t index, bool includeDefault = false);
+    bool                  RemoveAll2DFXEffects(bool includeDefault);
+    C2DEffectSAInterface* Get2DFXFromIndex(std::uint32_t index);
+    std::uint32_t         Get2DFXCount() const { return m_pInterface ? m_pInterface->ucNumOf2DEffects : 0; }
+
+    void StoreDefault2DFXEffect(C2DEffectSAInterface* effect);
+    bool        Reset2DFXEffects(bool removeCustomEffects = false);
+    static void StaticReset2DFXEffects();
 
     bool IsDynamic() { return m_pInterface ? m_pInterface->usDynamicIndex != 0xffff : false; };
 
@@ -482,3 +489,5 @@ private:
     void RwSetSupportedUpgrades(RwFrame* parent, DWORD dwModel);
     void SetModelSpecialType(eModelSpecialType eType, bool bState);
 };
+
+void HOOK_NodeNameStreamRead();

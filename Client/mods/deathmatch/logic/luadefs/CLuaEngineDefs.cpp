@@ -147,6 +147,17 @@ void CLuaEngineDefs::LoadFunctions()
         {"engineSetPoolCapacity", ArgumentParser<EngineSetPoolCapacity>},
         {"enginePreloadWorldArea", ArgumentParser<EnginePreloadWorldArea>},
         {"engineAddModel2DFX", ArgumentParser<EngineAddModel2DFX>},
+        {"engineRemoveModel2DFX", ArgumentParser<EngineRemoveModel2DFX>},
+        {"engineSetModel2DFXProperties", ArgumentParser<EngineSetModel2DFXProperties>},
+        {"engineSet2DFXProperties", ArgumentParser<EngineSet2DFXProperties>},
+        {"engineGetModel2DFXProperties", ArgumentParser<EngineGetModel2DFXProperties>},
+        {"engineGet2DFXProperties", ArgumentParser<EngineGet2DFXProperties>},
+        {"engineSet2DFXPosition", ArgumentParser<EngineSet2DFXPosition>},
+        {"engineSetModel2DFXPosition", ArgumentParser<EngineSetModel2DFXPosition>},
+        {"engineGet2DFXPosition", ArgumentParser<EngineGet2DFXPosition>},
+        {"engineGetModel2DFXPosition", ArgumentParser<EngineGetModel2DFXPosition>},
+        {"engineGetModel2DFXCount", ArgumentParser<EngineGetModel2DFXCount>},
+        {"engineResetModel2DFXEffects", ArgumentParser<EngineResetModel2DFXEffects>},
 
         // CLuaCFunctions::AddFunction ( "engineReplaceMatchingAtomics", EngineReplaceMatchingAtomics );
         // CLuaCFunctions::AddFunction ( "engineReplaceWheelAtomics", EngineReplaceWheelAtomics );
@@ -221,6 +232,7 @@ void CLuaEngineDefs::AddClass(lua_State* luaVM)
     AddEngineTxdClass(luaVM);
     AddEngineDffClass(luaVM);
     AddEngineImgClass(luaVM);
+    AddEngine2DFXClass(luaVM);
 }
 
 void CLuaEngineDefs::AddEngineColClass(lua_State* luaVM)
@@ -271,6 +283,24 @@ void CLuaEngineDefs::AddEngineDffClass(lua_State* luaVM)
     lua_classfunction(luaVM, "replace", "engineReplaceModel");
 
     lua_registerclass(luaVM, "EngineDFF", "Element");
+}
+
+void CLuaEngineDefs::AddEngine2DFXClass(lua_State* luaVM)
+{
+    lua_newclass(luaVM);
+
+    // set functions
+    lua_classfunction(luaVM, "setProperties", "engineSet2DFXProperties");
+    lua_classfunction(luaVM, "setPosition", "engineSet2DFXPosition");
+
+    // get functions
+    lua_classfunction(luaVM, "getProperties", "engineGet2DFXProperties");
+    lua_classfunction(luaVM, "getPosition", "engineGet2DFXPosition");
+
+    lua_classvariable(luaVM, "properties", "engineSet2DFXProperties", "engineGet2DFXProperties");
+    lua_classvariable(luaVM, "position", "engineSet2DFXPosition", "engineGet2DFXPosition");
+
+    lua_registerclass(luaVM, "Effect2DFX", "Element");
 }
 
 int CLuaEngineDefs::EngineLoadCOL(lua_State* luaVM)
@@ -2564,7 +2594,12 @@ void CLuaEngineDefs::EnginePreloadWorldArea(CVector position, std::optional<Prel
 
 std::variant<bool, CClient2DFX*> CLuaEngineDefs::EngineAddModel2DFX(lua_State* luaVM, std::uint32_t modelID, CVector position, e2dEffectType effectType, std::unordered_map<std::string, std::variant<bool, float, std::string>> effectData)
 {
-    if (!CClientObjectManager::IsValidModel(modelID) && !CClientVehicleManager::IsValidModel(modelID) && !CClientBuildingManager::IsValidModel(modelID))
+    // Only these effects make sense in MTA
+    if (effectType != e2dEffectType::LIGHT && effectType != e2dEffectType::PARTICLE && effectType != e2dEffectType::ROADSIGN &&
+        effectType != e2dEffectType::ESCALATOR && effectType != e2dEffectType::SUN_GLARE)
+        return false;
+
+    if (!CClient2DFXManager::IsValidModel(modelID))
         throw std::invalid_argument("Invalid model ID");
 
     const char* error = CClient2DFXManager::IsValidEffectData(effectType, effectData);
@@ -2580,4 +2615,164 @@ std::variant<bool, CClient2DFX*> CLuaEngineDefs::EngineAddModel2DFX(lua_State* l
         effect->SetParent(resource->GetResource2DFXRoot());
 
     return effect;
+}
+
+bool CLuaEngineDefs::EngineRemoveModel2DFX(std::uint32_t modelID, std::optional<std::uint32_t> index, std::optional<bool> includeDefault)
+{
+    if (!CClient2DFXManager::IsValidModel(modelID))
+        throw std::invalid_argument("Invalid model ID");
+
+    CModelInfo* modelInfo = g_pGame->GetModelInfo(static_cast<DWORD>(modelID));
+    if (!modelInfo)
+        return false;
+
+    if (index.has_value())
+    {
+        auto count = EngineGetModel2DFXCount(modelID);
+        if (std::holds_alternative<std::uint32_t>(count) && index >= std::get<std::uint32_t>(count))
+            throw std::invalid_argument("Invalid effect index");
+    }
+
+    return index.has_value() ? modelInfo->Remove2DFXEffectAtIndex(index.value(), includeDefault.value_or(false)) : modelInfo->RemoveAll2DFXEffects(includeDefault.value_or(false));
+}
+
+bool CLuaEngineDefs::EngineSetModel2DFXProperties(std::uint32_t modelID, std::uint32_t index, std::unordered_map<std::string, std::variant<bool, float, std::string>> effectData)
+{
+    if (!CClient2DFXManager::IsValidModel(modelID))
+        throw std::invalid_argument("Invalid model ID");
+
+    auto count = EngineGetModel2DFXCount(modelID);
+    if (std::holds_alternative<std::uint32_t>(count) && index >= std::get<std::uint32_t>(count))
+        throw std::invalid_argument("Invalid effect index");
+
+    CModelInfo* modelInfo = g_pGame->GetModelInfo(static_cast<DWORD>(modelID));
+    if (!modelInfo)
+        return false;
+
+    auto* effect = modelInfo->Get2DFXFromIndex(index);
+    if (!effect)
+        return false;
+
+    const char* error = CClient2DFXManager::IsValidEffectData(effect->type, effectData);
+    if (error)
+        throw std::invalid_argument(error);
+
+    modelInfo->StoreDefault2DFXEffect(effect);
+    return m_p2DFXManager->Set2DFXProperties(effect, effectData);
+}
+
+bool CLuaEngineDefs::EngineSet2DFXProperties(CClient2DFX* effect, std::unordered_map<std::string, std::variant<bool, float, std::string>> effectData)
+{
+    const char* error = CClient2DFXManager::IsValidEffectData(effect->Get2DFXType(), effectData);
+    if (error)
+        throw std::invalid_argument(error);
+
+    return m_p2DFXManager->Set2DFXProperties(effect->Get2DFX(), effectData);
+}
+
+bool CLuaEngineDefs::EngineSetModel2DFXPosition(std::uint32_t modelID, std::uint32_t index, CVector position)
+{
+    if (!CClient2DFXManager::IsValidModel(modelID))
+        throw std::invalid_argument("Invalid model ID");
+
+    auto count = EngineGetModel2DFXCount(modelID);
+    if (std::holds_alternative<std::uint32_t>(count) && index >= std::get<std::uint32_t>(count))
+        throw std::invalid_argument("Invalid effect index");
+
+    CModelInfo* modelInfo = g_pGame->GetModelInfo(static_cast<DWORD>(modelID));
+    if (!modelInfo)
+        return false;
+
+    auto* effect = modelInfo->Get2DFXFromIndex(index);
+    if (!effect)
+        return false;
+
+    modelInfo->StoreDefault2DFXEffect(effect);
+    m_p2DFXManager->Set2DFXPosition(effect, position);
+    return true;
+}
+
+bool CLuaEngineDefs::EngineSet2DFXPosition(CClient2DFX* effect, CVector position)
+{
+    m_p2DFXManager->Set2DFXPosition(effect->Get2DFX(), position);
+    return true;
+}
+
+std::variant<bool, std::tuple<float, float, float>> CLuaEngineDefs::EngineGetModel2DFXPosition(std::uint32_t modelID, std::uint32_t index)
+{
+    if (!CClient2DFXManager::IsValidModel(modelID))
+        throw std::invalid_argument("Invalid model ID");
+
+    auto count = EngineGetModel2DFXCount(modelID);
+    if (std::holds_alternative<std::uint32_t>(count) && index >= std::get<std::uint32_t>(count))
+        throw std::invalid_argument("Invalid effect index");
+
+    CModelInfo* modelInfo = g_pGame->GetModelInfo(static_cast<DWORD>(modelID));
+    if (!modelInfo)
+        return false;
+
+    auto* effect = modelInfo->Get2DFXFromIndex(index);
+    if (!effect)
+        return false;
+
+    CVector* position = m_p2DFXManager->Get2DFXPosition(effect);
+    return std::make_tuple(position->fX, position->fY, position->fZ);
+}
+
+std::variant<bool, std::tuple<float, float, float>> CLuaEngineDefs::EngineGet2DFXPosition(CClient2DFX* effect)
+{
+    CVector* position = m_p2DFXManager->Get2DFXPosition(effect->Get2DFX());
+    if (!position)
+        return false;
+
+    return std::make_tuple(position->fX, position->fY, position->fZ);
+}
+
+std::variant<bool, std::unordered_map<std::string, std::variant<bool, std::uint32_t, std::uint8_t, std::int8_t, std::uint16_t, float, std::string>>> CLuaEngineDefs::EngineGetModel2DFXProperties(std::uint32_t modelID, std::uint32_t index)
+{
+    if (!CClient2DFXManager::IsValidModel(modelID))
+        throw std::invalid_argument("Invalid model ID");
+
+    auto count = EngineGetModel2DFXCount(modelID);
+    if (std::holds_alternative<std::uint32_t>(count) && index >= std::get<std::uint32_t>(count))
+        throw std::invalid_argument("Invalid effect index");
+
+    CModelInfo* modelInfo = g_pGame->GetModelInfo(static_cast<DWORD>(modelID));
+    if (!modelInfo)
+        return false;
+
+    auto* effect = modelInfo->Get2DFXFromIndex(index);
+    if (!effect)
+        return false;
+
+    return m_p2DFXManager->Get2DFXProperties(effect);
+}
+
+std::variant<bool, std::unordered_map<std::string, std::variant<bool, std::uint32_t, std::uint8_t, std::int8_t, std::uint16_t, float, std::string>>> CLuaEngineDefs::EngineGet2DFXProperties(CClient2DFX* effect)
+{
+    return m_p2DFXManager->Get2DFXProperties(effect->Get2DFX());
+}
+
+std::variant<bool, std::uint32_t> CLuaEngineDefs::EngineGetModel2DFXCount(std::uint32_t modelID)
+{
+    if (!CClient2DFXManager::IsValidModel(modelID))
+        throw std::invalid_argument("Invalid model ID");
+
+    CModelInfo* modelInfo = g_pGame->GetModelInfo(static_cast<DWORD>(modelID));
+    if (!modelInfo)
+        return false;
+
+    return modelInfo->Get2DFXCount();
+}
+
+bool CLuaEngineDefs::EngineResetModel2DFXEffects(std::uint32_t modelID, std::optional<bool> removeCustomEffects)
+{
+    if (!CClient2DFXManager::IsValidModel(modelID))
+        throw std::invalid_argument("Invalid model ID");
+
+    CModelInfo* modelInfo = g_pGame->GetModelInfo(static_cast<DWORD>(modelID));
+    if (!modelInfo)
+        return false;
+
+    return modelInfo->Reset2DFXEffects(removeCustomEffects.value_or(true));
 }

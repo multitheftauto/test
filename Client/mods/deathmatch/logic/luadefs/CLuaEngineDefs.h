@@ -94,11 +94,27 @@ public:
 
     static void EnginePreloadWorldArea(CVector position, std::optional<PreloadAreaOption> option);
 
-    static std::variant<bool, CClient2DFX*> EngineAddModel2DFX(lua_State* luaVM, std::uint32_t modelID, CVector position, e2dEffectType effectType, std::unordered_map<std::string, std::variant<bool, float, std::string>> effectData);
+    static std::variant<bool, CClient2DFX*> EngineAddModel2DFX(lua_State* luaVM, std::uint32_t modelID, CVector position, e2dEffectType effectType,
+                                                               std::unordered_map<std::string, std::variant<bool, float, std::string>> effectData);
+    static bool EngineRemoveModel2DFX(std::uint32_t modelID, std::optional<std::uint32_t> index, std::optional<bool> includeDefault);
+    static bool EngineSetModel2DFXProperties(std::uint32_t modelID, std::uint32_t index,
+                                             std::unordered_map<std::string, std::variant<bool, float, std::string>> effectData);
+    static bool EngineSet2DFXProperties(CClient2DFX* effect, std::unordered_map<std::string, std::variant<bool, float, std::string>> effectData);
+    static bool EngineSetModel2DFXPosition(std::uint32_t modelID, std::uint32_t index, CVector position);
+    static bool EngineSet2DFXPosition(CClient2DFX* effect, CVector position);
+    static std::variant<bool, std::tuple<float, float, float>> EngineGetModel2DFXPosition(std::uint32_t modelID, std::uint32_t index);
+    static std::variant<bool, std::tuple<float, float, float>> EngineGet2DFXPosition(CClient2DFX* effect);
+    static std::variant<bool, std::unordered_map<std::string, std::variant<bool, std::uint32_t, std::uint8_t, std::int8_t, std::uint16_t, float, std::string>>>
+    EngineGetModel2DFXProperties(std::uint32_t modelID, std::uint32_t index);
+    static std::variant<bool, std::unordered_map<std::string, std::variant<bool, std::uint32_t, std::uint8_t, std::int8_t, std::uint16_t, float, std::string>>>
+                                             EngineGet2DFXProperties(CClient2DFX* effect);
+    static std::variant<bool, std::uint32_t> EngineGetModel2DFXCount(std::uint32_t modelID);
+    static bool                              EngineResetModel2DFXEffects(std::uint32_t modelID, std::optional<bool> removeCustomEffects);
 
 private:
     static void AddEngineColClass(lua_State* luaVM);
     static void AddEngineTxdClass(lua_State* luaVM);
     static void AddEngineDffClass(lua_State* luaVM);
     static void AddEngineImgClass(lua_State* luaVM);
+    static void AddEngine2DFXClass(lua_State* luaVM);
 };

@@ -288,6 +288,7 @@ public:
     void         ResetModelLodDistances();
     void         ResetModelFlags();
     void         ResetAlphaTransparencies();
+    void         ResetModel2DFXEffects();
     void         DisableVSync();
     void         ResetModelTimes();
 

@@ -10,6 +10,8 @@
 #include "StdInc.h"
 #include "CClient2DFXManager.h"
 
+#define mask(n) ((1 << (n)) - 1)
+
 CClient2DFXManager::CClient2DFXManager(CClientManager* mainManager) : m_mainManager(mainManager)
 {
     // Init
@@ -53,9 +55,253 @@ CClient2DFX* CClient2DFXManager::Add2DFX(std::uint32_t model, const CVector& pos
         return nullptr;
 
     if (!effect->Create(model, position, type, effectData))
-        return nullptr;
+    {
+        delete effect;
+        effect = nullptr;
+    }
 
     return effect;
+}
+
+bool CClient2DFXManager::Set2DFXProperties(C2DEffectSAInterface* effect, std::unordered_map<std::string, std::variant<bool, float, std::string>>& effectData)
+{
+    if (!effect)
+        return false;
+
+    // Set properties
+    switch (effect->type)
+    {
+        case e2dEffectType::LIGHT:
+        {
+            
+            t2dEffectLight& light = effect->effect.light;
+
+            auto* drawDistance = MapFind(effectData, "draw_distance");
+            light.coronaFarClip = std::get<float>(*drawDistance);
+
+            auto* lightRange = MapFind(effectData, "light_range");
+            light.pointLightRange = std::get<float>(*lightRange);
+
+            auto* coronaSize = MapFind(effectData, "corona_size");
+            light.coronaSize = std::get<float>(*coronaSize);
+
+            auto* shadowSize = MapFind(effectData, "shadow_size");
+            light.shadowSize = std::get<float>(*shadowSize);
+
+            auto* shadowMultiplier = MapFind(effectData, "shadow_multiplier");
+            light.shadowColorMultiplier = static_cast<std::uint8_t>(std::get<float>(*shadowMultiplier));
+
+            auto*              showMode = MapFind(effectData, "show_mode");
+            e2dCoronaFlashType flashType;
+            StringToEnum(std::get<std::string>(*showMode), flashType);
+            light.coronaFlashType = flashType;
+
+            auto* coronaReflection = MapFind(effectData, "corona_reflection");
+            light.coronaEnableReflection = std::get<bool>(*coronaReflection);
+
+            auto* coronaFlareType = MapFind(effectData, "flare_type");
+            light.coronaFlareType = static_cast<std::uint8_t>(std::get<float>(*coronaFlareType));
+
+            auto* flags = MapFind(effectData, "flags");
+            light.flags = static_cast<std::uint16_t>(std::get<float>(*flags));
+
+            auto* shadowZDistance = MapFind(effectData, "shadow_distance");
+            light.shadowZDistance = static_cast<std::int8_t>(std::get<float>(*shadowZDistance));
+
+            auto* offsetX = MapFind(effectData, "offsetX");
+            light.offsetX = static_cast<std::int8_t>(std::get<float>(*offsetX));
+
+            auto* offsetY = MapFind(effectData, "offsetY");
+            light.offsetY = static_cast<std::int8_t>(std::get<float>(*offsetY));
+
+            auto* offsetZ = MapFind(effectData, "offsetZ");
+            light.offsetZ = static_cast<std::int8_t>(std::get<float>(*offsetZ));
+
+            auto* color = MapFind(effectData, "color");
+            int   colorValue = static_cast<int>(std::get<float>(*color));
+            light.color = RwColor{static_cast<std::uint8_t>((colorValue >> 0) & mask(8)), static_cast<std::uint8_t>((colorValue >> 8) & mask(8)), static_cast<std::uint8_t>((colorValue >> 16) & mask(8)), static_cast<std::uint8_t>((colorValue >> 24) & mask(8))};
+
+            auto* coronaTexture = MapFind(effectData, "corona_name");
+            auto* shadowTexture = MapFind(effectData, "shadow_name");
+            PrepareTexturesForLightEffect(light.coronaTex, light.shadowTex, std::get<std::string>(*coronaTexture).c_str(), std::get<std::string>(*shadowTexture).c_str(), true);
+            break;
+        }
+        case e2dEffectType::PARTICLE:
+        {
+            auto* particleName = MapFind(effectData, "name");
+            auto& stringName = std::get<std::string>(*particleName);
+            std::strncpy(effect->effect.particle.szName, stringName.c_str(), sizeof(effect->effect.particle.szName) - 1);
+
+            break;
+        }
+        case e2dEffectType::ROADSIGN:
+        {
+            t2dEffectRoadsign& roadsign = effect->effect.roadsign;
+
+            auto* sizeX = MapFind(effectData, "sizeX");
+            auto* sizeY = MapFind(effectData, "sizeY");
+            roadsign.size = RwV2d{std::get<float>(*sizeX), std::get<float>(*sizeY)};
+
+            auto* rotX = MapFind(effectData, "rotX");
+            auto* rotY = MapFind(effectData, "rotY");
+            auto* rotZ = MapFind(effectData, "rotZ");
+            roadsign.rotation = RwV3d{std::get<float>(*rotX), std::get<float>(*rotY), std::get<float>(*rotZ)};
+
+            auto* flags = MapFind(effectData, "flags");
+            roadsign.flags = static_cast<std::uint8_t>(std::get<float>(*flags));
+
+            auto* text = MapFind(effectData, "text");
+            auto* text2 = MapFind(effectData, "text2");
+            auto* text3 = MapFind(effectData, "text3");
+            auto* text4 = MapFind(effectData, "text4");
+
+            roadsign.text = static_cast<char*>(malloc(64));
+            if (roadsign.text)
+            {
+                std::memcpy(roadsign.text, std::get<std::string>(*text).c_str(), 4);
+                std::memcpy(roadsign.text + 4, std::get<std::string>(*text2).c_str(), 4);
+                std::memcpy(roadsign.text + 8, std::get<std::string>(*text3).c_str(), 4);
+                std::memcpy(roadsign.text + 12, std::get<std::string>(*text4).c_str(), 4);
+            }
+
+            roadsign.atomic = nullptr;
+
+            break;
+        }
+        case e2dEffectType::ESCALATOR:
+        {
+            t2dEffectEscalator& escalator = effect->effect.escalator;
+
+            auto* bottomX = MapFind(effectData, "bottomX");
+            auto* bottomY = MapFind(effectData, "bottomY");
+            auto* bottomZ = MapFind(effectData, "bottomZ");
+            escalator.bottom = RwV3d{std::get<float>(*bottomX), std::get<float>(*bottomY), std::get<float>(*bottomZ)};
+
+            auto* topX = MapFind(effectData, "topX");
+            auto* topY = MapFind(effectData, "topY");
+            auto* topZ = MapFind(effectData, "topZ");
+            escalator.top = RwV3d{std::get<float>(*topX), std::get<float>(*topY), std::get<float>(*topZ)};
+
+            auto* endX = MapFind(effectData, "endX");
+            auto* endY = MapFind(effectData, "endY");
+            auto* endZ = MapFind(effectData, "endZ");
+            escalator.end = RwV3d{std::get<float>(*endX), std::get<float>(*endY), std::get<float>(*endZ)};
+
+            auto* dir = MapFind(effectData, "direction");
+            escalator.direction = static_cast<std::uint8_t>(std::get<float>(*dir));
+
+            break;
+        }
+        case e2dEffectType::ATTRACTOR:
+        case e2dEffectType::ENEX:
+        case e2dEffectType::FURNITURE:
+        case e2dEffectType::COVER_POINT:
+        case e2dEffectType::TRIGGER_POINT:
+        case e2dEffectType::SUN_GLARE: // This effect has no properties but works in MTA
+            break;
+    }
+
+    return true;
+}
+
+std::unordered_map<std::string, std::variant<bool, std::uint32_t, std::uint8_t, std::int8_t, std::uint16_t, float, std::string>> CClient2DFXManager::Get2DFXProperties(C2DEffectSAInterface* effect)
+{
+    auto properties = std::unordered_map<std::string, std::variant<bool, std::uint32_t, std::uint8_t, std::int8_t, std::uint16_t, float, std::string>>();
+    if (!effect)
+        return properties;
+
+    // Get properties
+    switch (effect->type)
+    {
+        case e2dEffectType::LIGHT:
+        {
+            const t2dEffectLight& light = effect->effect.light;
+
+            MapSet(properties, "draw_distance", light.coronaFarClip);
+            MapSet(properties, "light_range", light.pointLightRange);
+            MapSet(properties, "corona_size", light.coronaSize);
+            MapSet(properties, "shadow_size", light.shadowSize);
+            MapSet(properties, "shadow_multiplier", light.shadowColorMultiplier);
+            MapSet(properties, "show_mode", EnumToString(light.coronaFlashType));
+            MapSet(properties, "corona_reflection", light.coronaEnableReflection);
+            MapSet(properties, "flare_type", light.coronaFlareType);
+            MapSet(properties, "flags", light.flags);
+            MapSet(properties, "shadow_distance", light.shadowZDistance);
+            MapSet(properties, "offsetX", light.offsetX);
+            MapSet(properties, "offsetY", light.offsetY);
+            MapSet(properties, "offsetZ", light.offsetZ);
+            std::uint32_t colorValue = (static_cast<std::uint32_t>(light.color.r) << 0) |
+                               (static_cast<std::uint32_t>(light.color.g) << 8) |
+                               (static_cast<std::uint32_t>(light.color.b) << 16) |
+                               (static_cast<std::uint32_t>(light.color.a) << 24);
+            MapSet(properties, "color", colorValue);
+            MapSet(properties, "corona_name", !light.coronaTex ? "" : static_cast<std::string>(light.coronaTex->name));
+            MapSet(properties, "shadow_name", !light.shadowTex ? "" : static_cast<std::string>(light.shadowTex->name));
+
+            break;
+        }
+        case e2dEffectType::PARTICLE:
+        {
+            MapSet(properties, "name", static_cast<std::string>(effect->effect.particle.szName));
+            break;
+        }
+        case e2dEffectType::ROADSIGN:
+        {
+            const t2dEffectRoadsign& roadsign = effect->effect.roadsign;
+
+            MapSet(properties, "sizeX", roadsign.size.x);
+            MapSet(properties, "sizeY", roadsign.size.y);
+            MapSet(properties, "rotX", roadsign.rotation.x);
+            MapSet(properties, "rotY", roadsign.rotation.y);
+            MapSet(properties, "rotZ", roadsign.rotation.z);
+            MapSet(properties, "flags", roadsign.flags);
+            MapSet(properties, "text", !roadsign.text ? "" : roadsign.text);
+
+            break;
+        }
+        case e2dEffectType::ESCALATOR:
+        {
+            const t2dEffectEscalator& escalator = effect->effect.escalator;
+
+            MapSet(properties, "bottomX", escalator.bottom.x);
+            MapSet(properties, "bottomY", escalator.bottom.y);
+            MapSet(properties, "bottomZ", escalator.bottom.z);
+            MapSet(properties, "topX", escalator.top.x);
+            MapSet(properties, "topY", escalator.top.y);
+            MapSet(properties, "topZ", escalator.top.z);
+            MapSet(properties, "endX", escalator.end.x);
+            MapSet(properties, "endY", escalator.end.y);
+            MapSet(properties, "endZ", escalator.end.z);
+            MapSet(properties, "direction", escalator.direction);
+
+            break;
+        }
+        case e2dEffectType::ATTRACTOR:
+        case e2dEffectType::ENEX:
+        case e2dEffectType::FURNITURE:
+        case e2dEffectType::COVER_POINT:
+        case e2dEffectType::TRIGGER_POINT:
+        case e2dEffectType::SUN_GLARE:
+            break;
+    }
+
+    return properties;
+}
+
+void CClient2DFXManager::Set2DFXPosition(C2DEffectSAInterface* effect, const CVector& position)
+{
+    if (!effect)
+        return;
+
+    effect->position = RwV3d{position.fX, position.fY, position.fZ};
+}
+
+CVector* CClient2DFXManager::Get2DFXPosition(C2DEffectSAInterface* effect)
+{
+    if (!effect)
+        return nullptr;
+
+    return reinterpret_cast<CVector*>(&effect->position);
 }
 
 const char* CClient2DFXManager::IsValidEffectData(const e2dEffectType& effectType, std::unordered_map<std::string, std::variant<bool, float, std::string>>& effectData)
@@ -143,18 +389,6 @@ const char* CClient2DFXManager::IsValidEffectData(const e2dEffectType& effectTyp
 
             break;
         }
-        case e2dEffectType::ATTRACTOR:
-            // Unnecessary in MTA
-            break;
-        case e2dEffectType::SUN_GLARE:
-            // It has no properties, it only uses position and type fields
-            break;
-        case e2dEffectType::FURNITURE:
-            // Unnecessary in MTA (Probably unused even in SA)
-            break;
-        case e2dEffectType::ENEX:
-            // Unnecessary in MTA
-            break;
         case e2dEffectType::ROADSIGN:
         {
             auto* sizeX = MapFind(effectData, "sizeX");
@@ -199,17 +433,6 @@ const char* CClient2DFXManager::IsValidEffectData(const e2dEffectType& effectTyp
 
             break;
         }
-        case e2dEffectType::TRIGGER_POINT:
-        {
-            auto* id = MapFind(effectData, "id");
-            if (!id || !std::holds_alternative<float>(*id))
-                return "Invalid \"id\" value";
-
-            break;
-        }
-        case e2dEffectType::COVER_POINT:
-            // Unnecessary in MTA
-            break;
         case e2dEffectType::ESCALATOR:
         {
             auto* bottomX = MapFind(effectData, "bottomX");
@@ -254,7 +477,32 @@ const char* CClient2DFXManager::IsValidEffectData(const e2dEffectType& effectTyp
 
             break;
         }
+        case e2dEffectType::SUN_GLARE:
+            // It has no properties, it only uses position and type fields
+            break;
+        case e2dEffectType::ATTRACTOR:
+            // Unnecessary in MTA
+            break;
+        case e2dEffectType::FURNITURE:
+            // Unnecessary in MTA (Probably unused even in SA)
+            break;
+        case e2dEffectType::ENEX:
+            // Unnecessary in MTA
+            break;
+        case e2dEffectType::TRIGGER_POINT:
+        {
+            // Unnecessary in MTA
+            break;
+        }
+        case e2dEffectType::COVER_POINT:
+            // Unnecessary in MTA
+            break;
     }
 
     return nullptr;
+}
+
+bool CClient2DFXManager::IsValidModel(std::uint32_t model) noexcept
+{
+    return CClientObjectManager::IsValidModel(model) || CClientBuildingManager::IsValidModel(model) || CClientVehicleManager::IsValidModel(model);
 }

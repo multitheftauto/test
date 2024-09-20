@@ -97,6 +97,8 @@ enum class e2dEffectType : std::uint8_t
     TRIGGER_POINT,
     COVER_POINT,
     ESCALATOR,
+
+    NONE,
 };
 
 enum class e2dCoronaFlashType : std::uint8_t
@@ -297,6 +299,15 @@ public:
 
     // 2dfx functions
     virtual C2DEffectSAInterface* Add2DFXEffect(const CVector& position, const e2dEffectType& type) = 0;
+    virtual void                  Remove2DFX(C2DEffectSAInterface* effect, bool isCustom = false) = 0;
+    virtual bool                  Remove2DFXEffectAtIndex(std::uint32_t index, bool includeDefault = false) = 0;
+    virtual bool                  RemoveAll2DFXEffects(bool includeDefault = false) = 0;
+
+    virtual C2DEffectSAInterface* Get2DFXFromIndex(std::uint32_t index) = 0;
+    virtual std::uint32_t         Get2DFXCount() const = 0;
+
+    virtual void StoreDefault2DFXEffect(C2DEffectSAInterface* effect) = 0;
+    virtual bool Reset2DFXEffects(bool removeCustomEffects = false) = 0;
 
     virtual unsigned int GetParentID() = 0;
     virtual bool         IsDynamic() = 0;

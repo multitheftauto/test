@@ -246,6 +246,7 @@ public:
     virtual void ResetModelLodDistances() = 0;
     virtual void ResetModelFlags() = 0;
     virtual void ResetAlphaTransparencies() = 0;
+    virtual void ResetModel2DFXEffects() = 0;
     virtual void DisableVSync() = 0;
     virtual void ResetModelTimes() = 0;
 

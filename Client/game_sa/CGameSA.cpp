@@ -1072,6 +1072,11 @@ void CGameSA::ResetAlphaTransparencies()
     CModelInfoSA::StaticResetAlphaTransparencies();
 }
 
+void CGameSA::ResetModel2DFXEffects()
+{
+    CModelInfoSA::StaticReset2DFXEffects();
+}
+
 // Disable VSync by forcing what normally happends at the end of the loading screens
 // Note #1: This causes the D3D device to be reset after the next frame
 // Note #2: Some players do not need this to disable VSync. (Possibly because their video card driver settings override it somewhere)
