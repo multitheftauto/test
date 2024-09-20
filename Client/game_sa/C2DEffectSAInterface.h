@@ -274,7 +274,7 @@ public:
     static int effect2dPluginOffset;
 };
 
-static void PrepareTexturesForLightEffect(RwTexture* coronaTex, RwTexture* shadowTex, const char* coronaName, const char* shadowName, bool removeIfExist)
+static void PrepareTexturesForLightEffect(RwTexture*& coronaTex, RwTexture*& shadowTex, const char* coronaName, const char* shadowName, bool removeIfExist)
 {
     // Call CTxdStore::PushCurrentTxd
     ((void(__cdecl*)())FUNC_PushCurrentTxd)();

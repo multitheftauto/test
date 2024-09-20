@@ -2089,7 +2089,10 @@ void CModelInfoSA::StoreDefault2DFXEffect(C2DEffectSAInterface* effect)
     // Create a copy of textures for the lights
     // We must to do this, because C2DEffect::Shutdown removes them
     if (copy->type == e2dEffectType::LIGHT)
-        PrepareTexturesForLightEffect(copy->effect.light.coronaTex, copy->effect.light.shadowTex, effect->effect.light.coronaTex->name, effect->effect.light.shadowTex->name, false);
+    {
+        if (effect->effect.light.coronaTex && effect->effect.light.shadowTex)
+            PrepareTexturesForLightEffect(copy->effect.light.coronaTex, copy->effect.light.shadowTex, effect->effect.light.coronaTex->name, effect->effect.light.shadowTex->name, false);
+    }
     else if (copy->type == e2dEffectType::ROADSIGN)
     {
         // Create a copy of text and atomic for the roadsign
@@ -2180,9 +2183,6 @@ C2DEffectSAInterface* CModelInfoSA::Add2DFXEffect(const CVector& position, const
 
     // Save our effect
     d2fxEffects.push_back(effectInterface);
-
-    // Keep original effects
-    StoreDefault2DFXEffect(effectInterface);
 
     return effectInterface;
 }
