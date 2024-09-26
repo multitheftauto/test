@@ -117,8 +117,8 @@ bool CClient2DFXManager::Set2DFXProperties(C2DEffectSAInterface* effect, const e
             light.offsetZ = static_cast<std::int8_t>(std::get<float>(*offsetZ));
 
             auto* color = MapFind(effectData, "color");
-            int colorValue = static_cast<int>(std::get<float>(*color));
-            light.color = RwColor{static_cast<std::uint8_t>((colorValue >> 0) & mask(8)), static_cast<std::uint8_t>((colorValue >> 8) & mask(8)), static_cast<std::uint8_t>((colorValue >> 16) & mask(8)), static_cast<std::uint8_t>((colorValue >> 24) & mask(8))};
+            unsigned long colorValue = static_cast<unsigned long>(std::get<float>(*color));
+            light.color = RwColor{static_cast<std::uint8_t>((colorValue >> 16) & mask(8)), static_cast<std::uint8_t>((colorValue >> 8) & mask(8)), static_cast<std::uint8_t>((colorValue >> 0) & mask(8)), static_cast<std::uint8_t>((colorValue >> 24) & mask(8))};
 
             auto* coronaTexture = MapFind(effectData, "coronaName");
             auto* shadowTexture = MapFind(effectData, "shadowName");
@@ -416,8 +416,8 @@ bool CClient2DFXManager::Set2DFXProperty(C2DEffectSAInterface* effect, const e2d
                 {
                     if (std::holds_alternative<float>(propertyValue))
                     {
-                        int colorValue = static_cast<int>(std::get<float>(propertyValue));
-                        light.color = RwColor{static_cast<std::uint8_t>((colorValue >> 0) & mask(8)), static_cast<std::uint8_t>((colorValue >> 8) & mask(8)), static_cast<std::uint8_t>((colorValue >> 16) & mask(8)), static_cast<std::uint8_t>((colorValue >> 24) & mask(8))};
+                        unsigned long colorValue = static_cast<unsigned long>(std::get<float>(propertyValue));
+                        light.color = RwColor{static_cast<std::uint8_t>((colorValue >> 16) & mask(8)), static_cast<std::uint8_t>((colorValue >> 8) & mask(8)), static_cast<std::uint8_t>((colorValue >> 0) & mask(8)), static_cast<std::uint8_t>((colorValue >> 24) & mask(8))};
 
                         return true;
                     }
