@@ -472,7 +472,7 @@ public:
 
     // 2DFX functions
     C2DEffectSAInterface* Add2DFXEffect(const CVector& position, const e2dEffectType& type);
-    void                  Remove2DFX(C2DEffectSAInterface* effect, bool isCustom = false, bool decrementCounters = false);
+    bool                  Remove2DFX(C2DEffectSAInterface* effect, bool includeDefault);
     bool                  Remove2DFXEffectAtIndex(std::uint32_t index, bool includeDefault = false);
     bool                  RemoveAll2DFXEffects(bool includeDefault);
     C2DEffectSAInterface* Get2DFXFromIndex(std::uint32_t index);

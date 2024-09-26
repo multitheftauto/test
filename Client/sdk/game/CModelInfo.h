@@ -346,7 +346,7 @@ public:
 
     // 2dfx functions
     virtual C2DEffectSAInterface* Add2DFXEffect(const CVector& position, const e2dEffectType& type) = 0;
-    virtual void                  Remove2DFX(C2DEffectSAInterface* effect, bool isCustom = false, bool decrementCounters = false) = 0;
+    virtual bool                  Remove2DFX(C2DEffectSAInterface* effect, bool includeDefault) = 0;
     virtual bool                  Remove2DFXEffectAtIndex(std::uint32_t index, bool includeDefault = false) = 0;
     virtual bool                  RemoveAll2DFXEffects(bool includeDefault = false) = 0;
 

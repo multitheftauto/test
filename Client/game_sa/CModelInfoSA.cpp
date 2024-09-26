@@ -1206,6 +1206,7 @@ void CModelInfoSA::StaticReset2DFXEffects()
 
             // Delete copy of the default effect
             delete innerIter->second;
+            innerIter->second = nullptr;
             innerIter = iter->second.erase(innerIter);
         }
 
@@ -2177,8 +2178,7 @@ bool CModelInfoSA::Reset2DFXEffects(bool removeCustomEffects)
 
     // Clear maps
     map.clear();
-    ms_DefaultEffectsMap.clear();
-    removedDefaultEffects.clear();
+    ms_DefaultEffectsMap.erase(m_dwModelID);
 
     // Remove all custom effects
     if (removeCustomEffects)
@@ -2190,18 +2190,8 @@ bool CModelInfoSA::Reset2DFXEffects(bool removeCustomEffects)
             if (!effect)
                 continue;
 
-            // If this is not custom effect, continue
-            auto& it = std::find(d2fxEffects.begin(), d2fxEffects.end(), effect);
-            if (it == d2fxEffects.end())
-                continue;
-
-            m_pInterface->ucNumOf2DEffects--;
-            MapGet(m_numCustom2dfxEffects, m_pInterface)--;
-
-            Remove2DFX(effect, true);
+            Remove2DFX(effect, false);
         }
-
-        d2fxEffects.clear();
     }
 
     return true;
@@ -2228,10 +2218,30 @@ C2DEffectSAInterface* CModelInfoSA::Add2DFXEffect(const CVector& position, const
     return effectInterface;
 }
 
-void CModelInfoSA::Remove2DFX(C2DEffectSAInterface* effect, bool isCustom, bool decrementCounters)
+bool CModelInfoSA::Remove2DFX(C2DEffectSAInterface* effect, bool includeDefault)
 {
+    m_pInterface = ppModelInfo[m_dwModelID];
+    if (!m_pInterface)
+        return false;
+
     if (!effect)
-        return;
+        return false;
+
+    auto& it = std::find(d2fxEffects.begin(), d2fxEffects.end(), effect);
+    bool  isCustomEffect = it != d2fxEffects.end();
+
+    if (!includeDefault && !isCustomEffect)
+        return false;
+
+    if (!isCustomEffect)
+        StoreDefault2DFXEffect(effect);
+
+    m_pInterface->ucNumOf2DEffects--;
+    if (isCustomEffect)
+    {
+        MapGet(m_numCustom2dfxEffects, m_pInterface)--;
+        d2fxEffects.erase(it);
+    }
 
     switch (effect->type)
     {
@@ -2296,18 +2306,8 @@ void CModelInfoSA::Remove2DFX(C2DEffectSAInterface* effect, bool isCustom, bool 
         }
     }
 
-    if (decrementCounters)
-    {
-        m_pInterface->ucNumOf2DEffects--;
-        MapGet(m_numCustom2dfxEffects, m_pInterface)--;
-
-        auto& it = std::find(d2fxEffects.begin(), d2fxEffects.end(), effect);
-        if (it != d2fxEffects.end())
-            d2fxEffects.erase(it);
-    }
-
     // If it's custom effect then delete it. If it's default effect then store it as removed
-    if (isCustom)
+    if (isCustomEffect)
     {
         delete effect;
         effect = nullptr;
@@ -2326,24 +2326,7 @@ bool CModelInfoSA::Remove2DFXEffectAtIndex(std::uint32_t index, bool includeDefa
     if (!effect)
         return false;
 
-    auto& it = std::find(d2fxEffects.begin(), d2fxEffects.end(), effect);
-    bool isCustomEffect = it != d2fxEffects.end();
-
-    if (!includeDefault && !isCustomEffect)
-        return false;
-
-    if (!isCustomEffect)
-        StoreDefault2DFXEffect(effect);
-
-    m_pInterface->ucNumOf2DEffects--;
-    if (isCustomEffect)
-    {
-        MapGet(m_numCustom2dfxEffects, m_pInterface)--;
-        d2fxEffects.erase(it);
-    }
-
-    Remove2DFX(effect, isCustomEffect);
-    return true;
+    return Remove2DFX(effect, includeDefault);
 }
 
 bool CModelInfoSA::RemoveAll2DFXEffects(bool includeDefault)
@@ -2359,23 +2342,10 @@ bool CModelInfoSA::RemoveAll2DFXEffects(bool includeDefault)
         if (!effect)
             continue;
 
-        auto& it = std::find(d2fxEffects.begin(), d2fxEffects.end(), effect);
-        bool isCustomEffect = it != d2fxEffects.end();
-        if (!includeDefault && !isCustomEffect)
-            continue;
-
-        if (!isCustomEffect)
-            StoreDefault2DFXEffect(effect);
-
-        m_pInterface->ucNumOf2DEffects--;
-        if (isCustomEffect)
-            MapGet(m_numCustom2dfxEffects, m_pInterface)--;
-
-        Remove2DFX(effect, isCustomEffect);
+        Remove2DFX(effect, includeDefault);
     }
 
     d2fxEffects.clear();
-
     return true;
 }
 

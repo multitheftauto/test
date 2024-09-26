@@ -305,7 +305,7 @@ bool CClient2DFXManager::Set2DFXProperty(C2DEffectSAInterface* effect, const e2d
                 {
                     if (std::holds_alternative<float>(propertyValue))
                     {
-                        unsigned long colorValue = static_cast<unsigned long>(std::get<float>(propertyValue));
+                        std::uint32_t colorValue = static_cast<std::uint32_t>(std::get<float>(propertyValue));
                         light.color = RwColor{static_cast<std::uint8_t>((colorValue >> 16) & mask(8)), static_cast<std::uint8_t>((colorValue >> 8) & mask(8)), static_cast<std::uint8_t>((colorValue >> 0) & mask(8)), static_cast<std::uint8_t>((colorValue >> 24) & mask(8))};
 
                         return true;

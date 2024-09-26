@@ -2691,6 +2691,7 @@ bool CLuaEngineDefs::EngineSetModel2DFXProperty(std::uint32_t modelID, std::uint
     if (!effect)
         return false;
 
+    modelInfo->StoreDefault2DFXEffect(effect);
     return m_p2DFXManager->Set2DFXProperty(effect, property, propertyValue);
 }
 

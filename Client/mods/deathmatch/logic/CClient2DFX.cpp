@@ -29,7 +29,7 @@ CClient2DFX::~CClient2DFX()
     if (!modelInfo)
         return;
 
-    modelInfo->Remove2DFX(m_effectInterface, true, true);
+    modelInfo->Remove2DFX(m_effectInterface, false);
 }
 
 bool CClient2DFX::Create(std::uint32_t model, const CVector& position, const e2dEffectType& type, const effectDataMap& effectData)
