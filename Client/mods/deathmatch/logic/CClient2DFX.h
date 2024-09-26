@@ -10,6 +10,8 @@
 
 #include "CClientEntity.h"
 
+using effectDataMap = std::unordered_map<std::string, std::variant<bool, float, std::string>>;
+
 class CClient2DFX final : public CClientEntity
 {
     DECLARE_CLASS(CClient2DFX, CClientEntity)
@@ -25,7 +27,7 @@ public:
     void GetPosition(CVector& vecPosition) const {}
     void SetPosition(const CVector& vecPosition){}
 
-    bool Create(std::uint32_t model, const CVector& position, const e2dEffectType& type, std::unordered_map<std::string, std::variant<bool, float, std::string>>& effectData);
+    bool Create(std::uint32_t model, const CVector& position, const e2dEffectType& type, const effectDataMap& effectData);
 
     e2dEffectType  Get2DFXType() const noexcept { return m_effectType; }
     C2DEffectSAInterface* Get2DFX() const noexcept { return m_effectInterface; }
@@ -34,4 +36,5 @@ private:
     class CClient2DFXManager* m_2DFXManager;
     C2DEffectSAInterface*     m_effectInterface;
     e2dEffectType             m_effectType;
+    DWORD                     m_model;
 };

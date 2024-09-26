@@ -23,9 +23,16 @@ CClient2DFX::CClient2DFX(class CClientManager* manager, ElementID ID)
 CClient2DFX::~CClient2DFX()
 {
     m_2DFXManager->RemoveFromList(this);
+
+    // Destroy effect
+    CModelInfo* modelInfo = g_pGame->GetModelInfo(m_model);
+    if (!modelInfo)
+        return;
+
+    modelInfo->Remove2DFX(m_effectInterface, true, true);
 }
 
-bool CClient2DFX::Create(std::uint32_t model, const CVector& position, const e2dEffectType& type, std::unordered_map<std::string, std::variant<bool, float, std::string>>& effectData)
+bool CClient2DFX::Create(std::uint32_t model, const CVector& position, const e2dEffectType& type, const effectDataMap& effectData)
 {
     CModelInfo* modelInfo = g_pGame->GetModelInfo(static_cast<DWORD>(model));
     if (!modelInfo)
@@ -38,6 +45,7 @@ bool CClient2DFX::Create(std::uint32_t model, const CVector& position, const e2d
     // Set effect
     m_effectInterface = effect;
     m_effectType = effect->type;
+    m_model = static_cast<DWORD>(model);
 
     if (!m_2DFXManager->Set2DFXProperties(effect, effectData))
         return false;

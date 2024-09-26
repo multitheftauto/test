@@ -119,6 +119,54 @@ enum class e2dCoronaFlashType : std::uint8_t
     ON4_OFF6,
 };
 
+enum class e2dEffectProperty
+{
+    // light properties
+    FAR_CLIP_DISTANCE,
+    LIGHT_RANGE,
+    CORONA_SIZE,
+    SHADOW_SIZE,
+    SHADOW_MULT,
+    FLASH_TYPE,
+    CORONA_REFLECTION,
+    FLARE_TYPE,
+    CORONA_FLAGS,
+    SHADOW_DISTANCE,
+    OFFSET_X,
+    OFFSET_Y,
+    OFFSET_Z,
+    COLOR,
+    CORONA_NAME,
+    SHADOW_NAME,
+
+    // particle properties
+    PRT_NAME,
+
+    // roadsign properties
+    SIZE_X,
+    SIZE_Y,
+    ROT_X,
+    ROT_Y,
+    ROT_Z,
+    ROADSIGN_FLAGS,
+    TEXT,
+    TEXT_2,
+    TEXT_3,
+    TEXT_4,
+
+    // escalator properties
+    BOTTOM_X,
+    BOTTOM_Y,
+    BOTTOM_Z,
+    TOP_X,
+    TOP_Y,
+    TOP_Z,
+    END_X,
+    END_Y,
+    END_Z,
+    DIRECTION,
+};
+
 enum class e2dAttractorType : std::int8_t
 {
     UNDEFINED = -1,
@@ -299,7 +347,7 @@ public:
 
     // 2dfx functions
     virtual C2DEffectSAInterface* Add2DFXEffect(const CVector& position, const e2dEffectType& type) = 0;
-    virtual void                  Remove2DFX(C2DEffectSAInterface* effect, bool isCustom = false) = 0;
+    virtual void                  Remove2DFX(C2DEffectSAInterface* effect, bool isCustom = false, bool decrementCounters = false) = 0;
     virtual bool                  Remove2DFXEffectAtIndex(std::uint32_t index, bool includeDefault = false) = 0;
     virtual bool                  RemoveAll2DFXEffects(bool includeDefault = false) = 0;
 

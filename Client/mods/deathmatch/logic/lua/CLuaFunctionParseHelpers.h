@@ -90,6 +90,7 @@ DECLARE_ENUM_CLASS(eModelLoadState);
 DECLARE_ENUM_CLASS(PreloadAreaOption);
 DECLARE_ENUM_CLASS(e2dEffectType);
 DECLARE_ENUM_CLASS(e2dCoronaFlashType);
+DECLARE_ENUM_CLASS(e2dEffectProperty);
 
 // For corona name & shadow name
 enum class e2dEffectTextureName
@@ -553,7 +554,7 @@ inline SString GetClassTypeName(CClientVectorGraphic*)
     return "svg";
 }
 
-inline SString GetClassTypeName(CClient2DFX*)
+inline SString GetClassTypeName(CClient2DFX*) noexcept
 {
     return "2dfx";
 }

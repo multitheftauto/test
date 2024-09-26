@@ -20,18 +20,21 @@ public:
     ~CClient2DFXManager();
 
     void RemoveAll();
-    bool Exists(CClient2DFX* effect);
+    bool Exists(CClient2DFX* effect) const;
 
-    CClient2DFX* Add2DFX(std::uint32_t model, const CVector& position, const e2dEffectType& type, std::unordered_map<std::string, std::variant<bool, float, std::string>>& effectData);
+    CClient2DFX* Add2DFX(std::uint32_t model, const CVector& position, const e2dEffectType& type, const effectDataMap& effectData);
 
-    bool Set2DFXProperties(C2DEffectSAInterface* effect, std::unordered_map<std::string, std::variant<bool, float, std::string>>& effectData);
-    std::unordered_map<std::string, std::variant<bool, std::uint32_t, std::uint8_t, std::int8_t, std::uint16_t, float, std::string>> Get2DFXProperties(C2DEffectSAInterface* effect);
+    bool Set2DFXProperties(C2DEffectSAInterface* effect, const effectDataMap& effectData);
+    effectDataMap Get2DFXProperties(C2DEffectSAInterface* effect) const;
+
+    bool Set2DFXProperty(C2DEffectSAInterface* effect, const e2dEffectProperty& property, const std::variant<float, bool, std::string>& propertyValue);
+    std::variant<float, bool, std::string> Get2DFXProperty(C2DEffectSAInterface* effect, const e2dEffectProperty& property);
 
     void Set2DFXPosition(C2DEffectSAInterface* effect, const CVector& position);
-    CVector* Get2DFXPosition(C2DEffectSAInterface* effect);
+    CVector* Get2DFXPosition(C2DEffectSAInterface* effect) const;
 
     static bool        IsValidModel(std::uint32_t model) noexcept;
-    static const char* IsValidEffectData(const e2dEffectType& effectType, std::unordered_map<std::string, std::variant<bool, float, std::string>>& effectData);
+    static const char* IsValidEffectData(const e2dEffectType& effectType, const effectDataMap& effectData);
 
 private:
     void AddToList(CClient2DFX* effect) { m_effectsList.push_back(effect); }

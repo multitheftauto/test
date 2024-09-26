@@ -37,7 +37,7 @@ std::unordered_map<DWORD, unsigned short>                             CModelInfo
 std::unordered_map<DWORD, std::pair<float, float>>                    CModelInfoSA::ms_VehicleModelDefaultWheelSizes;
 std::map<unsigned short, int>                                         CModelInfoSA::ms_DefaultTxdIDMap;
 
-std::unordered_map<DWORD, std::unordered_map<C2DEffectSAInterface*, C2DEffectSAInterface*>>      CModelInfoSA::ms_DefaultEffectsMap;
+std::unordered_map<DWORD, std::unordered_map<C2DEffectSAInterface*, C2DEffectSAInterface*>> CModelInfoSA::ms_DefaultEffectsMap;
 static std::unordered_map<CBaseModelInfoSAInterface*, std::uint32_t> m_numCustom2dfxEffects;
 static std::vector<C2DEffectSAInterface*>                  d2fxEffects;
 static std::vector<C2DEffectSAInterface*>                  removedDefaultEffects;
@@ -1185,7 +1185,47 @@ void CModelInfoSA::ResetAlphaTransparency()
 
 void CModelInfoSA::StaticReset2DFXEffects()
 {
+    for (auto& iter = ms_DefaultEffectsMap.begin(); iter != ms_DefaultEffectsMap.end(); iter++)
+    {
+        CBaseModelInfoSAInterface* modelInfoInterface = ppModelInfo[iter->first];
+        if (!modelInfoInterface)
+            continue;
 
+        for (auto innerIter = iter->second.begin(); innerIter != iter->second.end();)
+        {
+            // Copy default effect
+            memcpy(innerIter->first, innerIter->second, sizeof(C2DEffectSAInterface));
+
+            // Increase the counter if this effect was removed
+            auto& removedEffect = std::find(removedDefaultEffects.begin(), removedDefaultEffects.end(), innerIter->first);
+            if (removedEffect != removedDefaultEffects.end())
+            {
+                removedDefaultEffects.erase(removedEffect);
+                modelInfoInterface->ucNumOf2DEffects++;
+            }
+
+            // Delete copy of the default effect
+            delete innerIter->second;
+            innerIter = iter->second.erase(innerIter);
+        }
+
+        // Decrement the counter by the number of custom effects
+        auto customEffectsCount = MapGet(m_numCustom2dfxEffects, modelInfoInterface);
+        if (customEffectsCount && customEffectsCount > 0)
+            modelInfoInterface->ucNumOf2DEffects -= customEffectsCount;
+
+        MapSet(m_numCustom2dfxEffects, modelInfoInterface, 0);
+    }
+
+    // Remove all custom effects
+    for (auto& customEffect : d2fxEffects)
+        if (customEffect)
+            delete customEffect;
+
+    // Clear maps
+    removedDefaultEffects.clear();
+    ms_DefaultEffectsMap.clear();
+    d2fxEffects.clear();
 }
 
 short CModelInfoSA::GetAvailableVehicleMod(unsigned short usUpgrade)
@@ -2187,7 +2227,7 @@ C2DEffectSAInterface* CModelInfoSA::Add2DFXEffect(const CVector& position, const
     return effectInterface;
 }
 
-void CModelInfoSA::Remove2DFX(C2DEffectSAInterface* effect, bool isCustom)
+void CModelInfoSA::Remove2DFX(C2DEffectSAInterface* effect, bool isCustom, bool decrementCounters)
 {
     if (!effect)
         return;
@@ -2255,6 +2295,16 @@ void CModelInfoSA::Remove2DFX(C2DEffectSAInterface* effect, bool isCustom)
         }
     }
 
+    if (decrementCounters)
+    {
+        m_pInterface->ucNumOf2DEffects--;
+        MapGet(m_numCustom2dfxEffects, m_pInterface)--;
+
+        auto& it = std::find(d2fxEffects.begin(), d2fxEffects.end(), effect);
+        if (it != d2fxEffects.end())
+            d2fxEffects.erase(it);
+    }
+
     // If it's custom effect then delete it. If it's default effect then store it as removed
     if (isCustom)
     {
@@ -2281,7 +2331,8 @@ bool CModelInfoSA::Remove2DFXEffectAtIndex(std::uint32_t index, bool includeDefa
     if (!includeDefault && !isCustomEffect)
         return false;
 
-    StoreDefault2DFXEffect(effect);
+    if (!isCustomEffect)
+        StoreDefault2DFXEffect(effect);
 
     m_pInterface->ucNumOf2DEffects--;
     if (isCustomEffect)
@@ -2313,7 +2364,8 @@ bool CModelInfoSA::RemoveAll2DFXEffects(bool includeDefault)
         if (!includeDefault && !isCustomEffect)
             continue;
 
-        StoreDefault2DFXEffect(effect);
+        if (!isCustomEffect)
+            StoreDefault2DFXEffect(effect);
 
         m_pInterface->ucNumOf2DEffects--;
         if (isCustomEffect)

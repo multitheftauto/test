@@ -43,12 +43,12 @@ void CClient2DFXManager::RemoveFromList(CClient2DFX* effect)
         m_effectsList.remove(effect);
 }
 
-bool CClient2DFXManager::Exists(CClient2DFX* effect)
+bool CClient2DFXManager::Exists(CClient2DFX* effect) const
 {
     return std::find(m_effectsList.begin(), m_effectsList.end(), effect) != m_effectsList.end();
 }
 
-CClient2DFX* CClient2DFXManager::Add2DFX(std::uint32_t model, const CVector& position, const e2dEffectType& type, std::unordered_map<std::string, std::variant<bool, float, std::string>>& effectData)
+CClient2DFX* CClient2DFXManager::Add2DFX(std::uint32_t model, const CVector& position, const e2dEffectType& type, const effectDataMap& effectData)
 {
     auto* effect = new CClient2DFX(m_mainManager, INVALID_ELEMENT_ID);
     if (!effect)
@@ -63,7 +63,7 @@ CClient2DFX* CClient2DFXManager::Add2DFX(std::uint32_t model, const CVector& pos
     return effect;
 }
 
-bool CClient2DFXManager::Set2DFXProperties(C2DEffectSAInterface* effect, std::unordered_map<std::string, std::variant<bool, float, std::string>>& effectData)
+bool CClient2DFXManager::Set2DFXProperties(C2DEffectSAInterface* effect, const effectDataMap& effectData)
 {
     if (!effect)
         return false;
@@ -73,39 +73,38 @@ bool CClient2DFXManager::Set2DFXProperties(C2DEffectSAInterface* effect, std::un
     {
         case e2dEffectType::LIGHT:
         {
-            
             t2dEffectLight& light = effect->effect.light;
 
-            auto* drawDistance = MapFind(effectData, "draw_distance");
+            auto* drawDistance = MapFind(effectData, "drawDistance");
             light.coronaFarClip = std::get<float>(*drawDistance);
 
-            auto* lightRange = MapFind(effectData, "light_range");
+            auto* lightRange = MapFind(effectData, "lightRange");
             light.pointLightRange = std::get<float>(*lightRange);
 
-            auto* coronaSize = MapFind(effectData, "corona_size");
+            auto* coronaSize = MapFind(effectData, "coronaSize");
             light.coronaSize = std::get<float>(*coronaSize);
 
-            auto* shadowSize = MapFind(effectData, "shadow_size");
+            auto* shadowSize = MapFind(effectData, "shadowSize");
             light.shadowSize = std::get<float>(*shadowSize);
 
-            auto* shadowMultiplier = MapFind(effectData, "shadow_multiplier");
+            auto* shadowMultiplier = MapFind(effectData, "shadowMultiplier");
             light.shadowColorMultiplier = static_cast<std::uint8_t>(std::get<float>(*shadowMultiplier));
 
-            auto*              showMode = MapFind(effectData, "show_mode");
+            auto*              showMode = MapFind(effectData, "showMode");
             e2dCoronaFlashType flashType;
             StringToEnum(std::get<std::string>(*showMode), flashType);
             light.coronaFlashType = flashType;
 
-            auto* coronaReflection = MapFind(effectData, "corona_reflection");
+            auto* coronaReflection = MapFind(effectData, "coronaReflection");
             light.coronaEnableReflection = std::get<bool>(*coronaReflection);
 
-            auto* coronaFlareType = MapFind(effectData, "flare_type");
+            auto* coronaFlareType = MapFind(effectData, "flareType");
             light.coronaFlareType = static_cast<std::uint8_t>(std::get<float>(*coronaFlareType));
 
             auto* flags = MapFind(effectData, "flags");
             light.flags = static_cast<std::uint16_t>(std::get<float>(*flags));
 
-            auto* shadowZDistance = MapFind(effectData, "shadow_distance");
+            auto* shadowZDistance = MapFind(effectData, "shadowDistance");
             light.shadowZDistance = static_cast<std::int8_t>(std::get<float>(*shadowZDistance));
 
             auto* offsetX = MapFind(effectData, "offsetX");
@@ -118,19 +117,18 @@ bool CClient2DFXManager::Set2DFXProperties(C2DEffectSAInterface* effect, std::un
             light.offsetZ = static_cast<std::int8_t>(std::get<float>(*offsetZ));
 
             auto* color = MapFind(effectData, "color");
-            int   colorValue = static_cast<int>(std::get<float>(*color));
+            int colorValue = static_cast<int>(std::get<float>(*color));
             light.color = RwColor{static_cast<std::uint8_t>((colorValue >> 0) & mask(8)), static_cast<std::uint8_t>((colorValue >> 8) & mask(8)), static_cast<std::uint8_t>((colorValue >> 16) & mask(8)), static_cast<std::uint8_t>((colorValue >> 24) & mask(8))};
 
-            auto* coronaTexture = MapFind(effectData, "corona_name");
-            auto* shadowTexture = MapFind(effectData, "shadow_name");
+            auto* coronaTexture = MapFind(effectData, "coronaName");
+            auto* shadowTexture = MapFind(effectData, "shadowName");
             PrepareTexturesForLightEffect(light.coronaTex, light.shadowTex, std::get<std::string>(*coronaTexture).c_str(), std::get<std::string>(*shadowTexture).c_str(), true);
             break;
         }
         case e2dEffectType::PARTICLE:
         {
             auto* particleName = MapFind(effectData, "name");
-            auto& stringName = std::get<std::string>(*particleName);
-            std::strncpy(effect->effect.particle.szName, stringName.c_str(), sizeof(effect->effect.particle.szName) - 1);
+            std::strncpy(effect->effect.particle.szName, std::get<std::string>(*particleName).c_str(), sizeof(effect->effect.particle.szName) - 1);
 
             break;
         }
@@ -192,21 +190,17 @@ bool CClient2DFXManager::Set2DFXProperties(C2DEffectSAInterface* effect, std::un
 
             break;
         }
-        case e2dEffectType::ATTRACTOR:
-        case e2dEffectType::ENEX:
-        case e2dEffectType::FURNITURE:
-        case e2dEffectType::COVER_POINT:
-        case e2dEffectType::TRIGGER_POINT:
         case e2dEffectType::SUN_GLARE: // This effect has no properties but works in MTA
+        default:
             break;
     }
 
     return true;
 }
 
-std::unordered_map<std::string, std::variant<bool, std::uint32_t, std::uint8_t, std::int8_t, std::uint16_t, float, std::string>> CClient2DFXManager::Get2DFXProperties(C2DEffectSAInterface* effect)
+effectDataMap CClient2DFXManager::Get2DFXProperties(C2DEffectSAInterface* effect) const
 {
-    auto properties = std::unordered_map<std::string, std::variant<bool, std::uint32_t, std::uint8_t, std::int8_t, std::uint16_t, float, std::string>>();
+    auto properties = effectDataMap();
     if (!effect)
         return properties;
 
@@ -217,26 +211,25 @@ std::unordered_map<std::string, std::variant<bool, std::uint32_t, std::uint8_t, 
         {
             const t2dEffectLight& light = effect->effect.light;
 
-            MapSet(properties, "draw_distance", light.coronaFarClip);
-            MapSet(properties, "light_range", light.pointLightRange);
-            MapSet(properties, "corona_size", light.coronaSize);
-            MapSet(properties, "shadow_size", light.shadowSize);
-            MapSet(properties, "shadow_multiplier", light.shadowColorMultiplier);
-            MapSet(properties, "show_mode", EnumToString(light.coronaFlashType));
-            MapSet(properties, "corona_reflection", light.coronaEnableReflection);
-            MapSet(properties, "flare_type", light.coronaFlareType);
-            MapSet(properties, "flags", light.flags);
-            MapSet(properties, "shadow_distance", light.shadowZDistance);
-            MapSet(properties, "offsetX", light.offsetX);
-            MapSet(properties, "offsetY", light.offsetY);
-            MapSet(properties, "offsetZ", light.offsetZ);
-            std::uint32_t colorValue = (static_cast<std::uint32_t>(light.color.r) << 0) |
-                               (static_cast<std::uint32_t>(light.color.g) << 8) |
-                               (static_cast<std::uint32_t>(light.color.b) << 16) |
-                               (static_cast<std::uint32_t>(light.color.a) << 24);
-            MapSet(properties, "color", colorValue);
-            MapSet(properties, "corona_name", !light.coronaTex ? "" : static_cast<std::string>(light.coronaTex->name));
-            MapSet(properties, "shadow_name", !light.shadowTex ? "" : static_cast<std::string>(light.shadowTex->name));
+            MapSet(properties, "drawDistance", light.coronaFarClip);
+            MapSet(properties, "lightRange", light.pointLightRange);
+            MapSet(properties, "coronaSize", light.coronaSize);
+            MapSet(properties, "shadowSize", light.shadowSize);
+            MapSet(properties, "shadowMultiplier", static_cast<float>(light.shadowColorMultiplier));
+            MapSet(properties, "showMode", EnumToString(light.coronaFlashType));
+            MapSet(properties, "coronaReflection", light.coronaEnableReflection);
+            MapSet(properties, "flareType", static_cast<float>(light.coronaFlareType));
+            MapSet(properties, "flags", static_cast<float>(light.flags));
+            MapSet(properties, "shadowDistance", static_cast<float>(light.shadowZDistance));
+            MapSet(properties, "offsetX", static_cast<float>(light.offsetX));
+            MapSet(properties, "offsetY", static_cast<float>(light.offsetY));
+            MapSet(properties, "offsetZ", static_cast<float>(light.offsetZ));
+
+            int colorValue = (static_cast<int>(light.color.a) << 24) | (static_cast<int>(light.color.r) << 16) | (static_cast<int>(light.color.g) << 8) | static_cast<int>(light.color.b);
+            MapSet(properties, "color", static_cast<float>(colorValue));
+
+            MapSet(properties, "coronaName", !light.coronaTex ? "" : static_cast<std::string>(light.coronaTex->name));
+            MapSet(properties, "shadowName", !light.shadowTex ? "" : static_cast<std::string>(light.shadowTex->name));
 
             break;
         }
@@ -254,7 +247,7 @@ std::unordered_map<std::string, std::variant<bool, std::uint32_t, std::uint8_t, 
             MapSet(properties, "rotX", roadsign.rotation.x);
             MapSet(properties, "rotY", roadsign.rotation.y);
             MapSet(properties, "rotZ", roadsign.rotation.z);
-            MapSet(properties, "flags", roadsign.flags);
+            MapSet(properties, "flags", static_cast<float>(roadsign.flags));
             MapSet(properties, "text", !roadsign.text ? "" : roadsign.text);
 
             break;
@@ -272,20 +265,573 @@ std::unordered_map<std::string, std::variant<bool, std::uint32_t, std::uint8_t, 
             MapSet(properties, "endX", escalator.end.x);
             MapSet(properties, "endY", escalator.end.y);
             MapSet(properties, "endZ", escalator.end.z);
-            MapSet(properties, "direction", escalator.direction);
+            MapSet(properties, "direction", static_cast<float>(escalator.direction));
 
             break;
         }
-        case e2dEffectType::ATTRACTOR:
-        case e2dEffectType::ENEX:
-        case e2dEffectType::FURNITURE:
-        case e2dEffectType::COVER_POINT:
-        case e2dEffectType::TRIGGER_POINT:
-        case e2dEffectType::SUN_GLARE:
+        default:
             break;
     }
 
     return properties;
+}
+
+bool CClient2DFXManager::Set2DFXProperty(C2DEffectSAInterface* effect, const e2dEffectProperty& property, const std::variant<float, bool, std::string>& propertyValue)
+{
+    if (!effect)
+        return false;
+
+    switch (effect->type)
+    {
+        case e2dEffectType::LIGHT:
+        {
+            t2dEffectLight& light = effect->effect.light;
+
+            switch (property)
+            {
+                case e2dEffectProperty::FAR_CLIP_DISTANCE:
+                {
+                    if (std::holds_alternative<float>(propertyValue))
+                    {
+                        light.coronaFarClip = std::get<float>(propertyValue);
+                        return true;
+                    }
+                    break;
+                }
+                case e2dEffectProperty::LIGHT_RANGE:
+                {
+                    if (std::holds_alternative<float>(propertyValue))
+                    {
+                        light.pointLightRange = std::get<float>(propertyValue);
+                        return true;
+                    }
+                    break;
+                }
+                case e2dEffectProperty::CORONA_SIZE:
+                {
+                    if (std::holds_alternative<float>(propertyValue))
+                    {
+                        light.coronaSize = std::get<float>(propertyValue);
+                        return true;
+                    }
+                    break;
+                }
+                case e2dEffectProperty::SHADOW_SIZE:
+                {
+                    if (std::holds_alternative<float>(propertyValue))
+                    {
+                        light.shadowSize = std::get<float>(propertyValue);
+                        return true;
+                    }
+                    break;
+                }
+                case e2dEffectProperty::SHADOW_MULT:
+                {
+                    if (std::holds_alternative<float>(propertyValue))
+                    {
+                        light.shadowColorMultiplier = std::get<float>(propertyValue);
+                        return true;
+                    }
+                    break;
+                }
+                case e2dEffectProperty::FLASH_TYPE:
+                {
+                    if (std::holds_alternative<std::string>(propertyValue))
+                    {
+                        e2dCoronaFlashType showMode;
+                        if (StringToEnum(std::get<std::string>(propertyValue), showMode))
+                        {
+                            light.coronaFlashType = showMode;
+                            return true;
+                        }
+                    }
+
+                    break;
+                }
+                case e2dEffectProperty::CORONA_REFLECTION:
+                {
+                    if (std::holds_alternative<bool>(propertyValue))
+                    {
+                        light.coronaEnableReflection = std::get<bool>(propertyValue);
+                        return true;
+                    }
+                    break;
+                }
+                case e2dEffectProperty::FLARE_TYPE:
+                {
+                    if (std::holds_alternative<float>(propertyValue))
+                    {
+                        light.coronaFlareType = static_cast<std::uint8_t>(std::get<float>(propertyValue));
+                        return true;
+                    }
+                    break;
+                }
+                case e2dEffectProperty::CORONA_FLAGS:
+                {
+                    if (std::holds_alternative<float>(propertyValue))
+                    {
+                        light.flags = static_cast<std::uint16_t>(std::get<float>(propertyValue));
+                        return true;
+                    }
+                    break;
+                }
+                case e2dEffectProperty::SHADOW_DISTANCE:
+                {
+                    if (std::holds_alternative<float>(propertyValue))
+                    {
+                        light.shadowZDistance = static_cast<std::int8_t>(std::get<float>(propertyValue));
+                        return true;
+                    }
+                    break;
+                }
+                case e2dEffectProperty::OFFSET_X:
+                {
+                    if (std::holds_alternative<float>(propertyValue))
+                    {
+                        light.offsetX = static_cast<std::int8_t>(std::get<float>(propertyValue));
+                        return true;
+                    }
+                    break;
+                }
+                case e2dEffectProperty::OFFSET_Y:
+                {
+                    if (std::holds_alternative<float>(propertyValue))
+                    {
+                        light.offsetY = static_cast<std::int8_t>(std::get<float>(propertyValue));
+                        return true;
+                    }
+                    break;
+                }
+                case e2dEffectProperty::OFFSET_Z:
+                {
+                    if (std::holds_alternative<float>(propertyValue))
+                    {
+                        light.offsetZ = static_cast<std::int8_t>(std::get<float>(propertyValue));
+                        return true;
+                    }
+
+                    break;
+                }
+                case e2dEffectProperty::COLOR:
+                {
+                    if (std::holds_alternative<float>(propertyValue))
+                    {
+                        int colorValue = static_cast<int>(std::get<float>(propertyValue));
+                        light.color = RwColor{static_cast<std::uint8_t>((colorValue >> 0) & mask(8)), static_cast<std::uint8_t>((colorValue >> 8) & mask(8)), static_cast<std::uint8_t>((colorValue >> 16) & mask(8)), static_cast<std::uint8_t>((colorValue >> 24) & mask(8))};
+
+                        return true;
+                    }
+
+                    break;
+                }
+                case e2dEffectProperty::CORONA_NAME:
+                {
+                    if (std::holds_alternative<std::string>(propertyValue))
+                    {
+                        e2dEffectTextureName coronaName;
+                        if (StringToEnum(std::get<std::string>(propertyValue), coronaName))
+                        {
+                            PrepareTexturesForLightEffect(light.coronaTex, light.shadowTex, std::get<std::string>(propertyValue).c_str(), light.shadowTex->name, true);
+                            return true;
+                        }
+                    }
+
+                    break;
+                }
+                case e2dEffectProperty::SHADOW_NAME:
+                {
+                    if (std::holds_alternative<std::string>(propertyValue))
+                    {
+                        e2dEffectTextureName shadowName;
+                        if (StringToEnum(std::get<std::string>(propertyValue), shadowName))
+                        {
+                            PrepareTexturesForLightEffect(light.coronaTex, light.shadowTex, light.coronaTex->name, std::get<std::string>(propertyValue).c_str(), true);
+                            return true;
+                        }
+                    }
+
+                    break;
+                }
+                default:
+                    break;
+            }
+
+            break;
+        }
+        case e2dEffectType::PARTICLE:
+        {
+            if (property == e2dEffectProperty::PRT_NAME)
+            {
+                if (std::holds_alternative<std::string>(propertyValue))
+                {
+                    std::strncpy(effect->effect.particle.szName, std::get<std::string>(propertyValue).c_str(), sizeof(effect->effect.particle.szName) - 1);
+                    return true;
+                }
+            }
+
+            break;
+        }
+        case e2dEffectType::ROADSIGN:
+        {
+            t2dEffectRoadsign roadsign = effect->effect.roadsign;
+
+            switch (property)
+            {
+                case e2dEffectProperty::SIZE_X:
+                {
+                    if (std::holds_alternative<float>(propertyValue))
+                    {
+                        roadsign.size.x = std::get<float>(propertyValue);
+                        return true;
+                    }
+
+                    break;
+                }
+                case e2dEffectProperty::SIZE_Y:
+                {
+                    if (std::holds_alternative<float>(propertyValue))
+                    {
+                        roadsign.size.y = std::get<float>(propertyValue);
+                        return true;
+                    }
+
+                    break;
+                }
+                case e2dEffectProperty::ROT_X:
+                {
+                    if (std::holds_alternative<float>(propertyValue))
+                    {
+                        roadsign.rotation.x = std::get<float>(propertyValue);
+                        return true;
+                    }
+
+                    break;
+                }
+                case e2dEffectProperty::ROT_Y:
+                {
+                    if (std::holds_alternative<float>(propertyValue))
+                    {
+                        roadsign.rotation.y = std::get<float>(propertyValue);
+                        return true;
+                    }
+
+                    break;
+                }
+                case e2dEffectProperty::ROT_Z:
+                {
+                    if (std::holds_alternative<float>(propertyValue))
+                    {
+                        roadsign.rotation.z = std::get<float>(propertyValue);
+                        return true;
+                    }
+
+                    break;
+                }
+                case e2dEffectProperty::ROADSIGN_FLAGS:
+                {
+                    if (std::holds_alternative<float>(propertyValue))
+                    {
+                        roadsign.flags = static_cast<std::uint8_t>(std::get<float>(propertyValue));
+                        return true;
+                    }
+
+                    break;
+                }
+                case e2dEffectProperty::TEXT:
+                {
+                    if (std::holds_alternative<std::string>(propertyValue))
+                    {
+                        if (!roadsign.text)
+                            roadsign.text = static_cast<char*>(malloc(64));
+
+                        std::memcpy(roadsign.text, std::get<std::string>(propertyValue).c_str(), 4);
+                        return true;
+                    }
+
+                    break;
+                }
+                case e2dEffectProperty::TEXT_2:
+                {
+                    if (std::holds_alternative<std::string>(propertyValue))
+                    {
+                        if (!roadsign.text)
+                            roadsign.text = static_cast<char*>(malloc(64));
+
+                        std::memcpy(roadsign.text + 4, std::get<std::string>(propertyValue).c_str(), 4);
+                        return true;
+                    }
+
+                    break;
+                }
+                case e2dEffectProperty::TEXT_3:
+                {
+                    if (std::holds_alternative<std::string>(propertyValue))
+                    {
+                        if (!roadsign.text)
+                            roadsign.text = static_cast<char*>(malloc(64));
+
+                        std::memcpy(roadsign.text + 8, std::get<std::string>(propertyValue).c_str(), 4);
+                        return true;
+                    }
+
+                    break;
+                }
+                case e2dEffectProperty::TEXT_4:
+                {
+                    if (std::holds_alternative<std::string>(propertyValue))
+                    {
+                        if (!roadsign.text)
+                            roadsign.text = static_cast<char*>(malloc(64));
+
+                        std::memcpy(roadsign.text + 12, std::get<std::string>(propertyValue).c_str(), 4);
+                        return true;
+                    }
+
+                    break;
+                }
+                default:
+                    break;
+            }
+            break;
+        }
+        case e2dEffectType::ESCALATOR:
+        {
+            t2dEffectEscalator escalator = effect->effect.escalator;
+
+            switch (property)
+            {
+                case e2dEffectProperty::BOTTOM_X:
+                {
+                    if (std::holds_alternative<float>(propertyValue))
+                    {
+                        escalator.bottom.x = std::get<float>(propertyValue);
+                        return true;
+                    }
+
+                    break;
+                }
+                case e2dEffectProperty::BOTTOM_Y:
+                {
+                    if (std::holds_alternative<float>(propertyValue))
+                    {
+                        escalator.bottom.y = std::get<float>(propertyValue);
+                        return true;
+                    }
+
+                    break;
+                }
+                case e2dEffectProperty::BOTTOM_Z:
+                {
+                    if (std::holds_alternative<float>(propertyValue))
+                    {
+                        escalator.bottom.z = std::get<float>(propertyValue);
+                        return true;
+                    }
+
+                    break;
+                }
+                case e2dEffectProperty::TOP_X:
+                {
+                    if (std::holds_alternative<float>(propertyValue))
+                    {
+                        escalator.top.x = std::get<float>(propertyValue);
+                        return true;
+                    }
+
+                    break;
+                }
+                case e2dEffectProperty::TOP_Y:
+                {
+                    if (std::holds_alternative<float>(propertyValue))
+                    {
+                        escalator.top.y = std::get<float>(propertyValue);
+                        return true;
+                    }
+
+                    break;
+                }
+                case e2dEffectProperty::TOP_Z:
+                {
+                    if (std::holds_alternative<float>(propertyValue))
+                    {
+                        escalator.top.z = std::get<float>(propertyValue);
+                        return true;
+                    }
+
+                    break;
+                }
+                case e2dEffectProperty::END_X:
+                {
+                    if (std::holds_alternative<float>(propertyValue))
+                    {
+                        escalator.end.x = std::get<float>(propertyValue);
+                        return true;
+                    }
+
+                    break;
+                }
+                case e2dEffectProperty::END_Y:
+                {
+                    if (std::holds_alternative<float>(propertyValue))
+                    {
+                        escalator.end.y = std::get<float>(propertyValue);
+                        return true;
+                    }
+
+                    break;
+                }
+                case e2dEffectProperty::END_Z:
+                {
+                    if (std::holds_alternative<float>(propertyValue))
+                    {
+                        escalator.end.z = std::get<float>(propertyValue);
+                        return true;
+                    }
+
+                    break;
+                }
+                case e2dEffectProperty::DIRECTION:
+                {
+                    if (std::holds_alternative<float>(propertyValue))
+                    {
+                        escalator.direction = static_cast<std::uint8_t>(std::get<float>(propertyValue));
+                        return true;
+                    }
+
+                    break;
+                }
+            }
+
+            break;
+        }
+        default:
+            break;
+    }
+
+    return false;
+}
+
+std::variant<float, bool, std::string> CClient2DFXManager::Get2DFXProperty(C2DEffectSAInterface* effect, const e2dEffectProperty& property)
+{
+    if (!effect)
+        return false;
+
+    switch (effect->type)
+    {
+        case e2dEffectType::LIGHT:
+        {
+            const t2dEffectLight& light = effect->effect.light;
+
+            switch (property)
+            {
+                case e2dEffectProperty::FAR_CLIP_DISTANCE:
+                    return light.coronaFarClip;
+                case e2dEffectProperty::LIGHT_RANGE:
+                    return light.pointLightRange;
+                case e2dEffectProperty::CORONA_SIZE:
+                    return light.coronaSize;
+                case e2dEffectProperty::SHADOW_SIZE:
+                    return light.shadowSize;
+                case e2dEffectProperty::SHADOW_MULT:
+                    return static_cast<float>(light.shadowColorMultiplier);
+                case e2dEffectProperty::FLASH_TYPE:
+                    return EnumToString(light.coronaFlashType);
+                case e2dEffectProperty::CORONA_REFLECTION:
+                    return light.coronaEnableReflection;
+                case e2dEffectProperty::FLARE_TYPE:
+                    return static_cast<float>(light.coronaFlareType);
+                case e2dEffectProperty::CORONA_FLAGS:
+                    return static_cast<float>(light.flags);
+                case e2dEffectProperty::SHADOW_DISTANCE:
+                    return static_cast<float>(light.shadowZDistance);
+                case e2dEffectProperty::OFFSET_X:
+                    return static_cast<float>(light.offsetX);
+                case e2dEffectProperty::OFFSET_Y:
+                    return static_cast<float>(light.offsetY);
+                case e2dEffectProperty::OFFSET_Z:
+                    return static_cast<float>(light.offsetZ);
+                case e2dEffectProperty::COLOR:
+                {
+                    int colorValue = (static_cast<int>(light.color.a) << 24) | (static_cast<int>(light.color.r) << 16) | (static_cast<int>(light.color.g) << 8) | static_cast<int>(light.color.b);
+                    return static_cast<float>(colorValue);
+                }
+                case e2dEffectProperty::CORONA_NAME:
+                    return light.coronaTex ? light.coronaTex->name : "";
+                case e2dEffectProperty::SHADOW_NAME:
+                    return light.shadowTex ? light.shadowTex->name : "";
+            }
+
+            break;
+        }
+        case e2dEffectType::PARTICLE:
+        {
+            if (property == e2dEffectProperty::PRT_NAME)
+                return effect->effect.particle.szName ? effect->effect.particle.szName : "";
+
+            break;
+        }
+        case e2dEffectType::ROADSIGN:
+        {
+            const t2dEffectRoadsign& roadsign = effect->effect.roadsign;
+
+            switch (property)
+            {
+                case e2dEffectProperty::SIZE_X:
+                    return roadsign.size.x;
+                case e2dEffectProperty::SIZE_Y:
+                    return roadsign.size.y;
+                case e2dEffectProperty::ROT_X:
+                    return roadsign.rotation.x;
+                case e2dEffectProperty::ROT_Y:
+                    return roadsign.rotation.y;
+                case e2dEffectProperty::ROT_Z:
+                    return roadsign.rotation.z;
+                case e2dEffectProperty::ROADSIGN_FLAGS:
+                    return static_cast<float>(roadsign.flags);
+                case e2dEffectProperty::TEXT:
+                case e2dEffectProperty::TEXT_2:
+                case e2dEffectProperty::TEXT_3:
+                case e2dEffectProperty::TEXT_4:
+                    return roadsign.text ? roadsign.text : "";
+            }
+
+            break;
+        }
+        case e2dEffectType::ESCALATOR:
+        {
+            const t2dEffectEscalator& escalator = effect->effect.escalator;
+
+            switch (property)
+            {
+                case e2dEffectProperty::BOTTOM_X:
+                    return escalator.bottom.x;
+                case e2dEffectProperty::BOTTOM_Y:
+                    return escalator.bottom.y;
+                case e2dEffectProperty::BOTTOM_Z:
+                    return escalator.bottom.z;
+                case e2dEffectProperty::TOP_X:
+                    return escalator.top.x;
+                case e2dEffectProperty::TOP_Y:
+                    return escalator.top.y;
+                case e2dEffectProperty::TOP_Z:
+                    return escalator.top.z;
+                case e2dEffectProperty::END_X:
+                    return escalator.end.x;
+                case e2dEffectProperty::END_Y:
+                    return escalator.end.y;
+                case e2dEffectProperty::END_Z:
+                    return escalator.end.z;
+                case e2dEffectProperty::DIRECTION:
+                    return static_cast<float>(escalator.direction);
+            }
+
+            break;
+        }
+        default:
+            break;
+    }
+
+    return false;
 }
 
 void CClient2DFXManager::Set2DFXPosition(C2DEffectSAInterface* effect, const CVector& position)
@@ -296,7 +842,7 @@ void CClient2DFXManager::Set2DFXPosition(C2DEffectSAInterface* effect, const CVe
     effect->position = RwV3d{position.fX, position.fY, position.fZ};
 }
 
-CVector* CClient2DFXManager::Get2DFXPosition(C2DEffectSAInterface* effect)
+CVector* CClient2DFXManager::Get2DFXPosition(C2DEffectSAInterface* effect) const
 {
     if (!effect)
         return nullptr;
@@ -304,7 +850,7 @@ CVector* CClient2DFXManager::Get2DFXPosition(C2DEffectSAInterface* effect)
     return reinterpret_cast<CVector*>(&effect->position);
 }
 
-const char* CClient2DFXManager::IsValidEffectData(const e2dEffectType& effectType, std::unordered_map<std::string, std::variant<bool, float, std::string>>& effectData)
+const char* CClient2DFXManager::IsValidEffectData(const e2dEffectType& effectType, const effectDataMap& effectData)
 {
     // Check if keys & values are ok!
     switch (effectType)
@@ -312,46 +858,46 @@ const char* CClient2DFXManager::IsValidEffectData(const e2dEffectType& effectTyp
         case e2dEffectType::LIGHT:
         {
             // corona far clip
-            auto* drawDistance = MapFind(effectData, "draw_distance");
+            auto* drawDistance = MapFind(effectData, "drawDistance");
             if (!drawDistance || !std::holds_alternative<float>(*drawDistance))
-                return "Invalid \"draw_distance\" value";
+                return "Invalid \"drawDistance\" value";
 
-            auto* lightRange = MapFind(effectData, "light_range");
+            auto* lightRange = MapFind(effectData, "lightRange");
             if (!lightRange || !std::holds_alternative<float>(*lightRange))
-                return "Invalid \"light_range\" value";
+                return "Invalid \"lightRange\" value";
 
-            auto* coronaSize = MapFind(effectData, "corona_size");
+            auto* coronaSize = MapFind(effectData, "coronaSize");
             if (!coronaSize || !std::holds_alternative<float>(*coronaSize))
-                return "Invalid \"corona_size\" value";
+                return "Invalid \"coronaSize\" value";
 
-            auto* shadowSize = MapFind(effectData, "shadow_size");
+            auto* shadowSize = MapFind(effectData, "shadowSize");
             if (!shadowSize || !std::holds_alternative<float>(*shadowSize))
-                return "Invalid \"shadow_size\" value";
+                return "Invalid \"shadowSize\" value";
 
-            auto* shadowMultiplier = MapFind(effectData, "shadow_multiplier");
+            auto* shadowMultiplier = MapFind(effectData, "shadowMultiplier");
             if (!shadowMultiplier || !std::holds_alternative<float>(*shadowMultiplier) || std::get<float>(*shadowMultiplier) < 0)
-                return "Invalid \"shadow_multiplier\" value";
+                return "Invalid \"shadowMultiplier\" value";
 
-            auto* showMode = MapFind(effectData, "show_mode");
+            auto* showMode = MapFind(effectData, "showMode");
             e2dCoronaFlashType tempType;
             if (!showMode || !std::holds_alternative<std::string>(*showMode) || !StringToEnum(std::get<std::string>(*showMode), tempType))
-                return "Invalid \"show_mode\" value";
+                return "Invalid \"showMode\" value";
 
-            auto* coronaReflection = MapFind(effectData, "corona_reflection");
+            auto* coronaReflection = MapFind(effectData, "coronaReflection");
             if (!coronaReflection || !std::holds_alternative<bool>(*coronaReflection))
-                return "Invalid \"corona_reflection\" value";
+                return "Invalid \"coronaReflection\" value";
 
-            auto* coronaFlareType = MapFind(effectData, "flare_type");
+            auto* coronaFlareType = MapFind(effectData, "flareType");
             if (!coronaFlareType || !std::holds_alternative<float>(*coronaFlareType) || (std::get<float>(*coronaFlareType) < 0 || std::get<float>(*coronaFlareType) > 1.0f))
-                return "Invalid \"flare_type\" value";
+                return "Invalid \"flareType\" value";
 
             auto* flags = MapFind(effectData, "flags");
             if (!flags || !std::holds_alternative<float>(*flags) || std::get<float>(*flags) < 0)
                 return "Invalid \"flags\" value";
 
-            auto* shadowZDistance = MapFind(effectData, "shadow_distance");
+            auto* shadowZDistance = MapFind(effectData, "shadowDistance");
             if (!shadowZDistance || (!std::holds_alternative<float>(*shadowZDistance)))
-                return "Invalid \"shadow_distance\" value";
+                return "Invalid \"shadowDistance\" value";
 
             auto* offsetX = MapFind(effectData, "offsetX");
             if (!offsetX || !std::holds_alternative<float>(*offsetX))
@@ -369,15 +915,15 @@ const char* CClient2DFXManager::IsValidEffectData(const e2dEffectType& effectTyp
             if (!color || !std::holds_alternative<float>(*color))
                 return "Invalid \"color\" value";
 
-            auto* coronaTexture = MapFind(effectData, "corona_name");
+            auto* coronaTexture = MapFind(effectData, "coronaName");
             e2dEffectTextureName tempName;
             if (!coronaTexture || !std::holds_alternative<std::string>(*coronaTexture) || !StringToEnum(std::get<std::string>(*coronaTexture), tempName))
-                return "Invalid \"corona_name\" value";
+                return "Invalid \"coronaName\" value";
 
-            auto* shadowTexture = MapFind(effectData, "shadow_name");
+            auto* shadowTexture = MapFind(effectData, "shadowName");
             e2dEffectTextureName shadowName;
             if (!shadowTexture || !std::holds_alternative<std::string>(*shadowTexture) || !StringToEnum(std::get<std::string>(*shadowTexture), shadowName))
-                return "Invalid \"shadow_name\" value";
+                return "Invalid \"shadowName\" value";
 
             break;
         }

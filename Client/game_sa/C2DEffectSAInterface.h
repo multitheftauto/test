@@ -51,6 +51,7 @@ struct t2dEffectLight
             // Flags 1
             std::uint16_t checkObstacles : 1;
             std::uint16_t fogType : 1;
+            std::uint16_t fogType2 : 1;
             std::uint16_t withoutCorona : 1;
             std::uint16_t onlyLongDistance : 1;
             std::uint16_t atDay : 1;
