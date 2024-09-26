@@ -288,16 +288,19 @@ static void PrepareTexturesForLightEffect(RwTexture*& coronaTex, RwTexture*& sha
     {
         using RwTextureDestroy = void(__cdecl*)(RwTexture*);
 
-        if (coronaTex)
+        if (coronaTex && coronaName)
             ((RwTextureDestroy)FUNC_RwTextureDestroy)(coronaTex);
-        if (shadowTex)
+        if (shadowTex && shadowName)
             ((RwTextureDestroy)FUNC_RwTextureDestroy)(shadowTex);
     }
 
     // Call RwReadTexture
     using RwReadTexture = RwTexture*(__cdecl*)(const char*, const char*);
-    coronaTex = ((RwReadTexture)FUNC_RwReadTexture)(coronaName, nullptr);
-    shadowTex = ((RwReadTexture)FUNC_RwReadTexture)(shadowName, nullptr);
+    if (coronaName)
+        coronaTex = ((RwReadTexture)FUNC_RwReadTexture)(coronaName, nullptr);
+
+    if (shadowName)
+        shadowTex = ((RwReadTexture)FUNC_RwReadTexture)(shadowName, nullptr);
 
     // Call CTxdStore::PopCurrentTxd
     ((void(__cdecl*)())FUNC_PopCurrentTxd)();

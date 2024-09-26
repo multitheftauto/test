@@ -27,7 +27,7 @@ public:
     bool Set2DFXProperties(C2DEffectSAInterface* effect, const effectDataMap& effectData);
     effectDataMap Get2DFXProperties(C2DEffectSAInterface* effect) const;
 
-    bool Set2DFXProperty(C2DEffectSAInterface* effect, const e2dEffectProperty& property, const std::variant<float, bool, std::string>& propertyValue);
+    bool Set2DFXProperty(C2DEffectSAInterface* effect, const e2dEffectProperty& property, const std::variant<bool, float, std::string>& propertyValue);
     std::variant<float, bool, std::string> Get2DFXProperty(C2DEffectSAInterface* effect, const e2dEffectProperty& property);
 
     void Set2DFXPosition(C2DEffectSAInterface* effect, const CVector& position);

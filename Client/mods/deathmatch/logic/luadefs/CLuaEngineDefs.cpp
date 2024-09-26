@@ -2674,7 +2674,7 @@ bool CLuaEngineDefs::EngineSet2DFXProperties(CClient2DFX* effect, effectDataMap 
     return m_p2DFXManager->Set2DFXProperties(effect->Get2DFX(), effectData);
 }
 
-bool CLuaEngineDefs::EngineSetModel2DFXProperty(std::uint32_t modelID, std::uint32_t index, e2dEffectProperty property, std::variant<float, bool, std::string> propertyValue)
+bool CLuaEngineDefs::EngineSetModel2DFXProperty(std::uint32_t modelID, std::uint32_t index, e2dEffectProperty property, std::variant<bool, float, std::string> propertyValue)
 {
     if (!CClient2DFXManager::IsValidModel(modelID))
         throw std::invalid_argument("Invalid model ID");
@@ -2694,7 +2694,7 @@ bool CLuaEngineDefs::EngineSetModel2DFXProperty(std::uint32_t modelID, std::uint
     return m_p2DFXManager->Set2DFXProperty(effect, property, propertyValue);
 }
 
-bool CLuaEngineDefs::EngineSet2DFXProperty(CClient2DFX* effect, e2dEffectProperty property, std::variant<float, bool, std::string> propertyValue)
+bool CLuaEngineDefs::EngineSet2DFXProperty(CClient2DFX* effect, e2dEffectProperty property, std::variant<bool, float, std::string> propertyValue)
 {
     return m_p2DFXManager->Set2DFXProperty(effect->Get2DFX(), property, propertyValue);
 }

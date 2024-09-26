@@ -2175,9 +2175,10 @@ bool CModelInfoSA::Reset2DFXEffects(bool removeCustomEffects)
         it = map.erase(it);
     }
 
-    // Clear both maps
+    // Clear maps
     map.clear();
     ms_DefaultEffectsMap.clear();
+    removedDefaultEffects.clear();
 
     // Remove all custom effects
     if (removeCustomEffects)
@@ -2352,7 +2353,6 @@ bool CModelInfoSA::RemoveAll2DFXEffects(bool includeDefault)
         return false;
 
     std::uint32_t numEffects = m_pInterface->ucNumOf2DEffects;
-
     for (std::uint32_t i = 0; i < numEffects; i++)
     {
         C2DEffectSAInterface* effect = Get2DFXFromIndex(i);

@@ -122,7 +122,7 @@ enum class e2dCoronaFlashType : std::uint8_t
 enum class e2dEffectProperty
 {
     // light properties
-    FAR_CLIP_DISTANCE,
+    FAR_CLIP_DISTANCE = 0,
     LIGHT_RANGE,
     CORONA_SIZE,
     SHADOW_SIZE,
@@ -130,7 +130,6 @@ enum class e2dEffectProperty
     FLASH_TYPE,
     CORONA_REFLECTION,
     FLARE_TYPE,
-    CORONA_FLAGS,
     SHADOW_DISTANCE,
     OFFSET_X,
     OFFSET_Y,
@@ -138,6 +137,7 @@ enum class e2dEffectProperty
     COLOR,
     CORONA_NAME,
     SHADOW_NAME,
+    FLAGS, // for light & roadsign
 
     // particle properties
     PRT_NAME,
@@ -148,7 +148,6 @@ enum class e2dEffectProperty
     ROT_X,
     ROT_Y,
     ROT_Z,
-    ROADSIGN_FLAGS,
     TEXT,
     TEXT_2,
     TEXT_3,

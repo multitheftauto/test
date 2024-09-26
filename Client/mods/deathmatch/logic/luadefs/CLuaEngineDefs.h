@@ -102,8 +102,8 @@ public:
     // Set functions
     static bool EngineSetModel2DFXProperties(std::uint32_t modelID, std::uint32_t index, effectDataMap effectData);
     static bool EngineSet2DFXProperties(CClient2DFX* effect, effectDataMap effectData);
-    static bool EngineSetModel2DFXProperty(std::uint32_t modelID, std::uint32_t index, e2dEffectProperty property, std::variant<float, bool, std::string> propertyValue);
-    static bool EngineSet2DFXProperty(CClient2DFX* effect, e2dEffectProperty property, std::variant<float, bool, std::string> propertyValue);
+    static bool EngineSetModel2DFXProperty(std::uint32_t modelID, std::uint32_t index, e2dEffectProperty property, std::variant<bool, float, std::string> propertyValue);
+    static bool EngineSet2DFXProperty(CClient2DFX* effect, e2dEffectProperty property, std::variant<bool, float, std::string> propertyValue);
     static bool EngineSetModel2DFXPosition(std::uint32_t modelID, std::uint32_t index, CVector position);
     static bool EngineSet2DFXPosition(CClient2DFX* effect, CVector position);
 
