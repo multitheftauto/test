@@ -1218,11 +1218,6 @@ void CModelInfoSA::StaticReset2DFXEffects()
         MapSet(m_numCustom2dfxEffects, modelInfoInterface, 0);
     }
 
-    // Remove all custom effects
-    for (auto& customEffect : d2fxEffects)
-        if (customEffect)
-            delete customEffect;
-
     // Clear maps
     removedDefaultEffects.clear();
     ms_DefaultEffectsMap.clear();
@@ -2214,7 +2209,6 @@ C2DEffectSAInterface* CModelInfoSA::Add2DFXEffect(const CVector& position, const
 
     // Save our effect
     d2fxEffects.push_back(effectInterface);
-
     return effectInterface;
 }
 
