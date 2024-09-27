@@ -300,6 +300,12 @@ bool CEntityAddPacket::Write(NetBitStreamInterface& BitStream) const
                     // is object break?
                     if (BitStream.Can(eBitStreamVersion::BreakObject_Serverside))
                         BitStream.WriteBit(pObject->GetHealth() <= 0);
+                  
+                    // Static flag
+                    if (BitStream.Can(eBitStreamVersion::ObjectSync_FixAndUpdate))
+                    {
+                        BitStream.WriteBit(pObject->IsStatic());
+                    }
 
                     // Respawnable
                     if (BitStream.Can(eBitStreamVersion::RespawnObject_Serverside))

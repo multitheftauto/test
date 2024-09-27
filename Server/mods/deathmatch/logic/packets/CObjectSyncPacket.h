@@ -23,9 +23,14 @@ public:
         ElementID     ID;
         CVector       vecPosition;
         CVector       vecRotation;
+        CVector       vecVelocity;
+        CVector       vecTurnVelocity;
         float         fHealth;
+        bool          bIsInWater;
+        ElementID     attackerID;
+
         unsigned char ucSyncTimeContext;
-        unsigned char ucFlags;
+        unsigned int ucFlags;
         bool          bSend;
     };
 

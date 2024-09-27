@@ -572,6 +572,10 @@ enum class eBitStreamVersion : unsigned short
     // 2024-09-04
     RespawnObject_Serverside,
 
+    // Object sync fix & improvments
+    // 2024-06-11
+    ObjectSync_FixAndUpdate,
+
     // This allows us to automatically increment the BitStreamVersion when things are added to this enum.
     // Make sure you only add things above this comment.
     Next,

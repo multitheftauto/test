@@ -32,6 +32,7 @@
 #include "CColPolygon.h"
 #include "CColSphere.h"
 #include "CPedSync.h"
+#include "CObjectSync.h"
 #include "CZoneNames.h"
 #include "CKeyBinds.h"
 #include "CAccountManager.h"
@@ -906,6 +907,13 @@ bool CStaticFunctionDefinitions::IsElementInWater(CElement* pElement, bool& bInW
             bInWater = pVehicle->IsInWater();
             break;
         }
+        case CElement::OBJECT:
+        case CElement::WEAPON:
+        {
+            CObject* pObject = static_cast<CObject*>(pElement);
+            bInWater = pObject->IsInWater();
+            break;
+        }
         default:
             return false;
     }
@@ -1193,6 +1201,14 @@ bool CStaticFunctionDefinitions::GetElementVelocity(CElement* pElement, CVector&
 
             break;
         }
+        case CElement::OBJECT:
+        case CElement::WEAPON:
+        {
+            CObject* pObject = static_cast<CObject*>(pElement);
+            vecVelocity = pObject->GetMoveSpeed();
+
+            break;
+        }
         default:
             return false;
     }
@@ -1212,6 +1228,13 @@ bool CStaticFunctionDefinitions::GetElementTurnVelocity(CElement* pElement, CVec
             CVehicle* pVehicle = static_cast<CVehicle*>(pElement);
             vecTurnVelocity = pVehicle->GetTurnSpeed();
 
+            break;
+        }
+        case CElement::WEAPON:
+        case CElement::OBJECT:
+        {
+            CObject* pObject = static_cast<CObject*>(pElement);
+            vecTurnVelocity = pObject->GetTurnSpeed();
             break;
         }
         default:
@@ -1360,7 +1383,8 @@ bool CStaticFunctionDefinitions::SetElementVelocity(CElement* pElement, const CV
         case CElement::OBJECT:
         case CElement::WEAPON:
         {
-            // Don't store velocity serverside (requires potentially needless additional sizeof(CVector) bytes per object)
+            CObject* pObject = static_cast<CObject*>(pElement);
+            pObject->SetMoveSpeed(vecVelocity);
             break;
         }
         default:
@@ -1400,7 +1424,9 @@ bool CStaticFunctionDefinitions::SetElementAngularVelocity(CElement* pElement, c
         case CElement::OBJECT:
         case CElement::WEAPON:
         {
-            // Don't store velocity serverside (requires potentially needless additional sizeof(CVector) bytes per object)
+            CObject* pObject = static_cast<CObject*>(pElement);
+            pObject->SetTurnSpeed(vecTurnVelocity);
+
             break;
         }
         default:

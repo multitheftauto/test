@@ -47,42 +47,54 @@ public:
     void                              StopMoving();
     const CPositionRotationAnimation* GetMoveAnimation();
 
-    unsigned char GetAlpha() { return m_ucAlpha; }
+    unsigned char GetAlpha() const { return m_ucAlpha; }
     void          SetAlpha(unsigned char ucAlpha) { m_ucAlpha = ucAlpha; }
 
-    unsigned short GetModel() { return m_usModel; }
+    unsigned short GetModel() const { return m_usModel; }
     void           SetModel(unsigned short usModel) { m_usModel = usModel; }
 
-    const CVector& GetScale() { return m_vecScale; }
+    const CVector& GetScale() const { return m_vecScale; }
     void           SetScale(const CVector& vecScale) { m_vecScale = vecScale; }
 
-    bool GetCollisionEnabled() { return m_bCollisionsEnabled; }
+    bool GetCollisionEnabled() const { return m_bCollisionsEnabled; }
     void SetCollisionEnabled(bool bCollisionEnabled) { m_bCollisionsEnabled = bCollisionEnabled; }
 
-    bool IsFrozen() { return m_bIsFrozen; }
+    bool IsFrozen() const { return m_bIsFrozen; }
     void SetFrozen(bool bFrozen) { m_bIsFrozen = bFrozen; }
 
-    float GetHealth() { return m_fHealth; }
+    float GetHealth() const { return m_fHealth; }
     void  SetHealth(float fHealth) { m_fHealth = fHealth; }
 
-    bool IsSyncable() { return m_bSyncable; }
+    bool IsSyncable() const { return m_bSyncable; }
     void SetSyncable(bool bSyncable) { m_bSyncable = bSyncable; }
 
-    CPlayer* GetSyncer() { return m_pSyncer; }
+    CPlayer* GetSyncer() const { return m_pSyncer; }
     void     SetSyncer(CPlayer* pPlayer);
 
     bool     IsLowLod();
     bool     SetLowLodObject(CObject* pLowLodObject);
     CObject* GetLowLodObject();
 
-    bool IsVisibleInAllDimensions() { return m_bVisibleInAllDimensions; };
+    bool IsVisibleInAllDimensions() const { return m_bVisibleInAllDimensions; };
     void SetVisibleInAllDimensions(bool bVisible) { m_bVisibleInAllDimensions = bVisible; };
 
-    bool IsBreakable() { return m_bBreakable; }
+    bool IsBreakable() const { return m_bBreakable; }
     void SetBreakable(bool bBreakable) { m_bBreakable = bBreakable; }
 
     bool IsRespawnEnabled() const noexcept { return m_bRespawnable; }
     void SetRespawnEnabled(bool bRespawn) noexcept { m_bRespawnable = bRespawn; }
+
+    CVector GetMoveSpeed() const { return m_vecMoveSpeed; }
+    void    SetMoveSpeed(CVector vecMoveSpeed);
+
+    CVector GetTurnSpeed() const { return m_vecTurnSpeed; }
+    void    SetTurnSpeed(CVector vecTurnSpeed);
+
+    bool IsStatic() const { return m_bIsStatic; }
+    void SetStatic(bool bStatic) { m_bIsStatic = bStatic; }
+
+    bool IsInWater() const { return m_bInWater; }
+    void SetInWater(bool bInWater) { m_bInWater = bInWater; }
 
 protected:
     bool ReadSpecialData(const int iLine) override;
@@ -100,6 +112,10 @@ private:
     CPlayer*        m_pSyncer;
     bool            m_bVisibleInAllDimensions = false;
     bool            m_bRespawnable;
+    CVector         m_vecMoveSpeed;
+    CVector         m_vecTurnSpeed;
+    bool            m_bInWater;
+    bool            m_bIsStatic;            // true if the object never moved using setElementVelocity/setElementAngularVelocity
 
 protected:
     bool m_bCollisionsEnabled;
@@ -110,4 +126,5 @@ protected:
 
 public:
     CPositionRotationAnimation* m_pMoveAnimation;
+    bool                        m_bIsMoving; // Variable for onObjectMoveStop event
 };

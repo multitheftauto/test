@@ -2716,15 +2716,23 @@ void CPacketHandler::Packet_EntityAdd(NetBitStreamInterface& bitStream)
         // ???                  (?)     - custom data
 
         // Objects:
-        // CVector              (12)    - position
-        // CVector              (12)    - rotation
-        // unsigned short       (2)     - object model id
-        // unsigned char        (1)     - alpha
-        // CVector              (12)    - scale
-        // bool                 (1)     - static
-        // SObjectHealthSync    (?)     - health
-        // bool                 (1)     - is break
-        // bool                 (1)     - respawnable
+        // CVector                      (12)    - position
+        // CVector                      (12)    - rotation
+        // unsigned short               (2)     - object model id
+        // unsigned char                (1)     - alpha
+        // bool                         (1)     - is low lod
+        // ElementID                    (2)     - low lod object id
+        // bool                         (1)     - doublesided
+        // bool                         (1)     - breakable
+        // bool                         (1)     - visible in all dimensions
+        // bool                         (1)     - moving
+        // CPositionRotationAnimation   (?)     - Moving animation data
+        // CVector                      (12)    - scale
+        // bool                         (1)     - frozen
+        // SObjectHealthSync            (?)     - health
+        // bool                         (1)     - is break
+        // bool                         (1)     - respawnable
+        // bool                         (1)     - static flag
 
         // Pickups:
         // CVector              (12)    - position
@@ -3090,9 +3098,15 @@ retry:
                             if (bitStream.ReadBit())
                                 pObject->Break();
                         }
-
+                      
                         if (bitStream.Can(eBitStreamVersion::RespawnObject_Serverside))
                             pObject->SetRespawnEnabled(bitStream.ReadBit());
+                      
+                        // Set static flag
+                        if (bitStream.Can(eBitStreamVersion::ObjectSync_FixAndUpdate))
+                        {
+                            pObject->SetStatic(bitStream.ReadBit());
+                        }
 
                         pObject->SetCollisionEnabled(bCollisonsEnabled);
                         if (ucEntityTypeID == CClientGame::WEAPON)
