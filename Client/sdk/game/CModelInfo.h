@@ -89,6 +89,7 @@ enum class e2dEffectType : std::uint8_t
 {
     LIGHT = 0,
     PARTICLE,
+    UNKNOWN,
     ATTRACTOR,
     SUN_GLARE,
     FURNITURE,
@@ -352,6 +353,8 @@ public:
 
     virtual C2DEffectSAInterface* Get2DFXFromIndex(std::uint32_t index) = 0;
     virtual std::uint32_t         Get2DFXCount() const = 0;
+
+    virtual void Update2DFXEffect(C2DEffectSAInterface* effect) = 0;
 
     virtual void StoreDefault2DFXEffect(C2DEffectSAInterface* effect) = 0;
     virtual bool Reset2DFXEffects(bool removeCustomEffects = false) = 0;

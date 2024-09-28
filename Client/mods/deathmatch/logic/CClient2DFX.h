@@ -31,10 +31,11 @@ public:
 
     e2dEffectType  Get2DFXType() const noexcept { return m_effectType; }
     C2DEffectSAInterface* Get2DFX() const noexcept { return m_effectInterface; }
+    std::uint32_t         GetModelID() const noexcept { return m_model; }
 
 private:
     class CClient2DFXManager* m_2DFXManager;
     C2DEffectSAInterface*     m_effectInterface;
     e2dEffectType             m_effectType;
-    DWORD                     m_model;
+    std::uint32_t             m_model;
 };

@@ -29,6 +29,7 @@
 
 // fx stuff
 #define FUNC_Fx_c_DestroyEntityFx 0x4A1280
+#define FUNC_Fx_c_CreateEntityFx  0x4A11E0
 #define VAR_G_Fx                  0xA9AE00
 #define OFFSET_FxSystem_Entities  0xC
 #define OFFSET_FxSystem_Link_Prev 0x4

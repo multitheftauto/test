@@ -476,6 +476,9 @@ public:
     bool                  RemoveAll2DFXEffects(bool includeDefault);
     C2DEffectSAInterface* Get2DFXFromIndex(std::uint32_t index);
     std::uint32_t         Get2DFXCount() const { return m_pInterface ? m_pInterface->ucNumOf2DEffects : 0; }
+    void                  Update2DFXEffect(C2DEffectSAInterface* effect);
+
+    static auto GetEntitiesFromFx(std::uint32_t modelID);
 
     void        StoreDefault2DFXEffect(C2DEffectSAInterface* effect);
     bool        Reset2DFXEffects(bool removeCustomEffects = false);

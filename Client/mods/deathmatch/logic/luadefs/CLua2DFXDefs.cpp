@@ -142,16 +142,29 @@ bool CLua2DFXDefs::SetModel2DFXProperties(std::uint32_t modelID, std::uint32_t i
         throw LuaFunctionError(error);
 
     modelInfo->StoreDefault2DFXEffect(effect);
-    return m_p2DFXManager->Set2DFXProperties(effect, effectData);
+
+    if (!m_p2DFXManager->Set2DFXProperties(effect, effectData))
+        return false;
+
+    modelInfo->Update2DFXEffect(effect);
+    return true;
 }
 
 bool CLua2DFXDefs::Set2DFXProperties(CClient2DFX* effect, effectDataMap effectData)
 {
+    CModelInfo* modelInfo = g_pGame->GetModelInfo(effect->GetModelID());
+    if (!modelInfo)
+        return false;
+
     const char* error = CClient2DFXManager::IsValidEffectData(effect->Get2DFXType(), effectData);
     if (error)
         throw LuaFunctionError(error);
 
-    return m_p2DFXManager->Set2DFXProperties(effect->Get2DFX(), effectData);
+    if (!m_p2DFXManager->Set2DFXProperties(effect->Get2DFX(), effectData))
+        return false;
+
+    modelInfo->Update2DFXEffect(effect->Get2DFX());
+    return true;
 }
 
 bool CLua2DFXDefs::SetModel2DFXProperty(std::uint32_t modelID, std::uint32_t index, e2dEffectProperty property, std::variant<bool, float, std::string> propertyValue)
@@ -172,12 +185,25 @@ bool CLua2DFXDefs::SetModel2DFXProperty(std::uint32_t modelID, std::uint32_t ind
         return false;
 
     modelInfo->StoreDefault2DFXEffect(effect);
-    return m_p2DFXManager->Set2DFXProperty(effect, property, propertyValue);
+
+    if (!m_p2DFXManager->Set2DFXProperty(effect, property, propertyValue))
+        return false;
+
+    modelInfo->Update2DFXEffect(effect);
+    return true;
 }
 
 bool CLua2DFXDefs::Set2DFXProperty(CClient2DFX* effect, e2dEffectProperty property, std::variant<bool, float, std::string> propertyValue)
 {
-    return m_p2DFXManager->Set2DFXProperty(effect->Get2DFX(), property, propertyValue);
+    CModelInfo* modelInfo = g_pGame->GetModelInfo(effect->GetModelID());
+    if (!modelInfo)
+        return false;
+
+    if (!m_p2DFXManager->Set2DFXProperty(effect->Get2DFX(), property, propertyValue))
+        return false;
+
+    modelInfo->Update2DFXEffect(effect->Get2DFX());
+    return true;
 }
 
 bool CLua2DFXDefs::SetModel2DFXPosition(std::uint32_t modelID, std::uint32_t index, CVector position)
