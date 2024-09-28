@@ -356,6 +356,9 @@ public:
     virtual void StoreDefault2DFXEffect(C2DEffectSAInterface* effect) = 0;
     virtual bool Reset2DFXEffects(bool removeCustomEffects = false) = 0;
 
+    virtual void CopyModified2DFXEffects() = 0;
+    virtual void RestoreModified2DFXEffects() = 0;
+
     virtual unsigned int GetParentID() = 0;
     virtual bool         IsDynamic() = 0;
 };

@@ -37,10 +37,12 @@ std::unordered_map<DWORD, unsigned short>                             CModelInfo
 std::unordered_map<DWORD, std::pair<float, float>>                    CModelInfoSA::ms_VehicleModelDefaultWheelSizes;
 std::map<unsigned short, int>                                         CModelInfoSA::ms_DefaultTxdIDMap;
 
-std::unordered_map<DWORD, std::unordered_map<C2DEffectSAInterface*, C2DEffectSAInterface*>> CModelInfoSA::ms_DefaultEffectsMap;
-static std::unordered_map<CBaseModelInfoSAInterface*, std::uint32_t> m_numCustom2dfxEffects;
-static std::vector<C2DEffectSAInterface*>                  d2fxEffects;
-static std::vector<C2DEffectSAInterface*>                  removedDefaultEffects;
+static std::unordered_map<DWORD, std::unordered_map<C2DEffectSAInterface*, C2DEffectSAInterface*>> ms_DefaultEffectsMap;
+static std::unordered_map<CBaseModelInfoSAInterface*, std::uint32_t>                               numCustom2dfxEffects;
+static std::vector<C2DEffectSAInterface*>                                                          d2fxEffects;
+static std::vector<C2DEffectSAInterface*>                                                          removedDefault2dfxEffects;
+static std::unordered_map<DWORD, std::uint8_t>                                                     defaultNumOf2DFXEffects;
+static std::unordered_map<DWORD, std::vector<C2DEffectSAInterface*>>                               tempCopy2dfxEffects;
 
 int C2DEffectSA::effect2dPluginOffset = *(int*)0xC3A1E0; // g2dEffectPluginOffset
 
@@ -116,7 +118,7 @@ CBaseModelInfoSAInterface* CModelInfoSA::GetInterface()
 void CModelInfoSA::SetModelID(DWORD dwModelID)
 {
     m_dwModelID = dwModelID;
-    MapSet(m_numCustom2dfxEffects, ppModelInfo[dwModelID], 0);
+    MapSet(numCustom2dfxEffects, ppModelInfo[dwModelID], 0);
 }
 
 bool CModelInfoSA::IsBoat()
@@ -1197,10 +1199,10 @@ void CModelInfoSA::StaticReset2DFXEffects()
             memcpy(innerIter->first, innerIter->second, sizeof(C2DEffectSAInterface));
 
             // Increase the counter if this effect was removed
-            auto& removedEffect = std::find(removedDefaultEffects.begin(), removedDefaultEffects.end(), innerIter->first);
-            if (removedEffect != removedDefaultEffects.end())
+            auto& removedEffect = std::find(removedDefault2dfxEffects.begin(), removedDefault2dfxEffects.end(), innerIter->first);
+            if (removedEffect != removedDefault2dfxEffects.end())
             {
-                removedDefaultEffects.erase(removedEffect);
+                removedDefault2dfxEffects.erase(removedEffect);
                 modelInfoInterface->ucNumOf2DEffects++;
             }
 
@@ -1211,15 +1213,15 @@ void CModelInfoSA::StaticReset2DFXEffects()
         }
 
         // Decrement the counter by the number of custom effects
-        auto customEffectsCount = MapGet(m_numCustom2dfxEffects, modelInfoInterface);
+        auto customEffectsCount = MapGet(numCustom2dfxEffects, modelInfoInterface);
         if (customEffectsCount && customEffectsCount > 0)
             modelInfoInterface->ucNumOf2DEffects -= customEffectsCount;
 
-        MapSet(m_numCustom2dfxEffects, modelInfoInterface, 0);
+        MapSet(numCustom2dfxEffects, modelInfoInterface, 0);
     }
 
     // Clear maps
-    removedDefaultEffects.clear();
+    removedDefault2dfxEffects.clear();
     ms_DefaultEffectsMap.clear();
     d2fxEffects.clear();
 }
@@ -2118,6 +2120,9 @@ void CModelInfoSA::StoreDefault2DFXEffect(C2DEffectSAInterface* effect)
     if (MapContains(ms_DefaultEffectsMap, m_dwModelID) && MapContains(MapGet(ms_DefaultEffectsMap, m_dwModelID), effect))
         return;
 
+    if (!MapContains(defaultNumOf2DFXEffects, m_dwModelID))
+        MapSet(defaultNumOf2DFXEffects, m_dwModelID, ppModelInfo[m_dwModelID]->ucNumOf2DEffects);
+
     // Copy an existing default effect
     C2DEffectSAInterface* copy = new C2DEffectSAInterface();
     memcpy(copy, effect, sizeof(C2DEffectSAInterface));
@@ -2158,10 +2163,10 @@ bool CModelInfoSA::Reset2DFXEffects(bool removeCustomEffects)
         memcpy(it->first, it->second, sizeof(C2DEffectSAInterface));
 
         // Increase the counter if this effect was removed
-        auto& removedEffect = std::find(removedDefaultEffects.begin(), removedDefaultEffects.end(), it->first);
-        if (removedEffect != removedDefaultEffects.end())
+        auto& removedEffect = std::find(removedDefault2dfxEffects.begin(), removedDefault2dfxEffects.end(), it->first);
+        if (removedEffect != removedDefault2dfxEffects.end())
         {
-            removedDefaultEffects.erase(removedEffect);
+            removedDefault2dfxEffects.erase(removedEffect);
             m_pInterface->ucNumOf2DEffects++;
         }
 
@@ -2205,7 +2210,7 @@ C2DEffectSAInterface* CModelInfoSA::Add2DFXEffect(const CVector& position, const
 
     // Update counters
     m_pInterface->ucNumOf2DEffects = m_pInterface->ucNumOf2DEffects ? m_pInterface->ucNumOf2DEffects + 1 : 1;
-    MapGet(m_numCustom2dfxEffects, m_pInterface)++;
+    MapGet(numCustom2dfxEffects, m_pInterface)++;
 
     // Save our effect
     d2fxEffects.push_back(effectInterface);
@@ -2233,7 +2238,7 @@ bool CModelInfoSA::Remove2DFX(C2DEffectSAInterface* effect, bool includeDefault)
     m_pInterface->ucNumOf2DEffects--;
     if (isCustomEffect)
     {
-        MapGet(m_numCustom2dfxEffects, m_pInterface)--;
+        MapGet(numCustom2dfxEffects, m_pInterface)--;
         d2fxEffects.erase(it);
     }
 
@@ -2307,7 +2312,7 @@ bool CModelInfoSA::Remove2DFX(C2DEffectSAInterface* effect, bool includeDefault)
         effect = nullptr;
     }
     else
-        removedDefaultEffects.push_back(effect);
+        removedDefault2dfxEffects.push_back(effect);
 }
 
 bool CModelInfoSA::Remove2DFXEffectAtIndex(std::uint32_t index, bool includeDefault)
@@ -2410,7 +2415,7 @@ static C2DEffectSAInterface* Get2dEffect(CBaseModelInfoSAInterface* modelInfo, R
 
     static auto* storedEffects = reinterpret_cast<C2DEffectInfoStoreSAInterface*>(ARRAY_2DFXInfoStore);
 
-    std::uint32_t numCustomEffects = m_numCustom2dfxEffects[modelInfo];
+    std::uint32_t numCustomEffects = numCustom2dfxEffects[modelInfo];
     std::uint32_t numStoredEffects = modelInfo->ucNumOf2DEffects - numPluginEffects - numCustomEffects;
 
     if (index < numStoredEffects)
@@ -2445,6 +2450,64 @@ static void _declspec(naked) HOOK_Get2dEffect()
         pop ebx
         retn 4
     }
+}
+
+void CModelInfoSA::CopyModified2DFXEffects()
+{
+    CBaseModelInfoSAInterface* modelInfo = ppModelInfo[m_dwModelID];
+    if (!modelInfo || modelInfo->ucNumOf2DEffects == 0)
+        return;
+
+    // Has modified effects?
+    if (!MapContains(ms_DefaultEffectsMap, m_dwModelID))
+        return;
+
+    auto tempVec = std::vector<C2DEffectSAInterface*>();
+    std::uint32_t numEffects = MapGet(defaultNumOf2DFXEffects, m_dwModelID);
+    for (std::uint32_t i = 0; i < numEffects; i++)
+    {
+        auto effect = ((C2DEffectSAInterface * (__thiscall*)(CBaseModelInfoSAInterface*, std::uint32_t index))FUNC_CBaseModelInfo_Get2dEffect)(modelInfo, i);
+        if (!effect)
+            continue;
+
+        // Copy effect
+        auto copy = new C2DEffectSAInterface();
+        memcpy(copy, effect, sizeof(C2DEffectSAInterface));
+        tempVec.push_back(copy);
+    }
+
+    MapSet(tempCopy2dfxEffects, m_dwModelID, tempVec);
+}
+
+void CModelInfoSA::RestoreModified2DFXEffects()
+{
+    if (!MapContains(tempCopy2dfxEffects, m_dwModelID))
+        return;
+
+    CBaseModelInfoSAInterface* modelInfo = ppModelInfo[m_dwModelID];
+    if (!modelInfo)
+        return;
+
+    std::uint32_t numEffects = MapGet(defaultNumOf2DFXEffects, m_dwModelID);
+    auto&          tempVec = MapGet(tempCopy2dfxEffects, m_dwModelID);
+    if (tempVec.size() > 0)
+    {
+        for (std::uint32_t i = 0; i < numEffects; i++)
+        {
+            auto effect = ((C2DEffectSAInterface * (__thiscall*)(CBaseModelInfoSAInterface*, std::uint32_t index))FUNC_CBaseModelInfo_Get2dEffect)(modelInfo, i);
+            if (!effect)
+                continue;
+
+            if (tempVec[i])
+            {
+                memcpy(effect, tempVec[i], sizeof(C2DEffectSAInterface));
+                delete tempVec[i];
+            }
+        }
+    }
+
+    tempVec.clear();
+    tempCopy2dfxEffects.erase(m_dwModelID);
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////

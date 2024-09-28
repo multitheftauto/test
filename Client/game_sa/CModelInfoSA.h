@@ -333,7 +333,6 @@ protected:
     static std::unordered_map<DWORD, std::pair<float, float>>                    ms_VehicleModelDefaultWheelSizes;
     static std::map<unsigned short, int>                                         ms_DefaultTxdIDMap;
     SVehicleSupportedUpgrades                                                    m_ModelSupportedUpgrades;
-    static std::unordered_map<DWORD, std::unordered_map<C2DEffectSAInterface*, C2DEffectSAInterface*>> CModelInfoSA::ms_DefaultEffectsMap;
 
 public:
     CModelInfoSA();
@@ -481,6 +480,9 @@ public:
     void        StoreDefault2DFXEffect(C2DEffectSAInterface* effect);
     bool        Reset2DFXEffects(bool removeCustomEffects = false);
     static void StaticReset2DFXEffects();
+
+    void CopyModified2DFXEffects();
+    void RestoreModified2DFXEffects();
 
     bool IsDynamic() { return m_pInterface ? m_pInterface->usDynamicIndex != 0xffff : false; };
 
