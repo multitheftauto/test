@@ -20,6 +20,7 @@
 #include "CWorldSA.h"
 #include "gamesa_renderware.h"
 #include "CFxSA.h"
+#include "C2DEffectSA.h"
 
 extern CCoreInterface* g_pCore;
 extern CGameSA*        pGame;
@@ -1208,8 +1209,7 @@ void CModelInfoSA::StaticReset2DFXEffects()
             }
 
             // Delete copy of the default effect
-            delete innerIter->second;
-            innerIter->second = nullptr;
+            C2DEffectSA::SafeDelete2DFXEffect(innerIter->second);
             innerIter = iter->second.erase(innerIter);
         }
 
@@ -1223,7 +1223,7 @@ void CModelInfoSA::StaticReset2DFXEffects()
         // Destroy copies
         auto& copies = MapGet(tempCopy2dfxEffects, iter->first);
         for (auto copy : copies)
-            delete copy;
+            C2DEffectSA::SafeDelete2DFXEffect(copy);
     }
 
     // Clear maps & vectors
@@ -2173,6 +2173,10 @@ void CModelInfoSA::Update2DFXEffect(C2DEffectSAInterface* effect)
 
 void CModelInfoSA::StoreDefault2DFXEffect(C2DEffectSAInterface* effect)
 {
+    // Is custom effect?
+    if (std::find(d2fxEffects.begin(), d2fxEffects.end(), effect) != d2fxEffects.end())
+        return;
+
     if (MapContains(ms_DefaultEffectsMap, m_dwModelID) && MapContains(MapGet(ms_DefaultEffectsMap, m_dwModelID), effect))
         return;
 
@@ -2188,13 +2192,19 @@ void CModelInfoSA::StoreDefault2DFXEffect(C2DEffectSAInterface* effect)
     if (copy->type == e2dEffectType::LIGHT)
     {
         if (effect->effect.light.coronaTex && effect->effect.light.shadowTex)
-            PrepareTexturesForLightEffect(copy->effect.light.coronaTex, copy->effect.light.shadowTex, effect->effect.light.coronaTex->name, effect->effect.light.shadowTex->name, false);
+            C2DEffectSA::PrepareTexturesForLightEffect(copy->effect.light.coronaTex, copy->effect.light.shadowTex, effect->effect.light.coronaTex->name, effect->effect.light.shadowTex->name, false);
     }
     else if (copy->type == e2dEffectType::ROADSIGN)
     {
         // Create a copy of text and atomic for the roadsign
         // We must to do this, because C2DEffect::Shutdown removes them
-        std::strncpy(copy->effect.roadsign.text, effect->effect.roadsign.text, 64);
+        copy->effect.roadsign.text = static_cast<char*>(std::malloc(64));
+        if (copy->effect.roadsign.text)
+        {
+            std::memset(copy->effect.roadsign.text, 0, 64);
+            std::strncpy(copy->effect.roadsign.text, effect->effect.roadsign.text, 64);
+        }
+
         copy->effect.roadsign.atomic = RpAtomicClone(effect->effect.roadsign.atomic);
     }
 
@@ -2230,14 +2240,14 @@ bool CModelInfoSA::Reset2DFXEffects(bool removeCustomEffects)
 
         // We no longer need a copy
         // So delete it
-        delete it->second;
+        C2DEffectSA::SafeDelete2DFXEffect(it->second);
         it = map.erase(it);
     }
 
     // Delete temp copies
     auto& copies = MapGet(tempCopy2dfxEffects, m_dwModelID);
     for (auto* copy : copies)
-        delete copy;
+        C2DEffectSA::SafeDelete2DFXEffect(copy);
 
     // Clear maps
     map.clear();
@@ -2300,20 +2310,14 @@ bool CModelInfoSA::Remove2DFX(C2DEffectSAInterface* effect, bool includeDefault)
         StoreDefault2DFXEffect(effect);
 
     m_pInterface->ucNumOf2DEffects--;
-    if (isCustomEffect)
-    {
-        MapGet(numCustom2dfxEffects, m_pInterface)--;
-        d2fxEffects.erase(it);
-    }
 
     switch (effect->type)
     {
         case e2dEffectType::ROADSIGN:
         case e2dEffectType::LIGHT:
         {
-            // Call C2DEffect::Shutdown
-            ((void(__thiscall*)(C2DEffectSAInterface*))FUNC_C2DEffect_Shutdown)(effect);
-
+            C2DEffectSA::Shutdown(effect);
+            
             // Prevent creation when stream in but keep in memory so we can restore it later
             effect->type = e2dEffectType::NONE;
             break;
@@ -2322,15 +2326,13 @@ bool CModelInfoSA::Remove2DFX(C2DEffectSAInterface* effect, bool includeDefault)
         {
             auto entities = GetEntitiesFromFx(m_dwModelID);
             for (auto* entity : entities)
-            {
                 // Call Fx_c::DestroyEntityFx
                 ((void(__thiscall*)(CFxSAInterface*, CEntitySAInterface*))FUNC_Fx_c_DestroyEntityFx)(fx, entity);
 
-                // Prevent creation when stream in but keep in memory so we can restore it later
-                effect->type = e2dEffectType::NONE;
-            }
-
             entities.clear();
+
+            // Prevent creation when stream in but keep in memory so we can restore it later
+            effect->type = e2dEffectType::NONE;
             break;
         }
         case e2dEffectType::ESCALATOR:
@@ -2358,11 +2360,16 @@ bool CModelInfoSA::Remove2DFX(C2DEffectSAInterface* effect, bool includeDefault)
             effect->type = e2dEffectType::NONE;
             break;
         }
+        default:
+            return false;
     }
 
     // If it's custom effect then delete it. If it's default effect then store it as removed
     if (isCustomEffect)
     {
+        MapGet(numCustom2dfxEffects, m_pInterface)--;
+        d2fxEffects.erase(it);
+
         delete effect;
         effect = nullptr;
     }
@@ -2462,7 +2469,7 @@ void CModelInfoSA::RestoreModified2DFXEffects()
             if (tempVec[i])
             {
                 MemCpyFast(effect, tempVec[i], sizeof(C2DEffectSAInterface));
-                delete tempVec[i];
+                C2DEffectSA::SafeDelete2DFXEffect(tempVec[i]);
             }
 
             Update2DFXEffect(effect);

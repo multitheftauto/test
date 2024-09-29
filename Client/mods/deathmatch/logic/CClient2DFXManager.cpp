@@ -137,7 +137,7 @@ effectDataMap CClient2DFXManager::Get2DFXProperties(C2DEffectSAInterface* effect
             MapSet(properties, "rotY", roadsign.rotation.y);
             MapSet(properties, "rotZ", roadsign.rotation.z);
             MapSet(properties, "flags", static_cast<float>(roadsign.flags));
-            MapSet(properties, "text", !roadsign.text ? "" : roadsign.text);
+            MapSet(properties, "text", !roadsign.text ? "" : std::string(roadsign.text, roadsignTextSize));
 
             break;
         }
@@ -320,7 +320,7 @@ bool CClient2DFXManager::Set2DFXProperty(C2DEffectSAInterface* effect, const e2d
                         e2dEffectTextureName coronaName;
                         if (StringToEnum(std::get<std::string>(propertyValue), coronaName))
                         {
-                            PrepareTexturesForLightEffect(light.coronaTex, light.shadowTex, std::get<std::string>(propertyValue).c_str(), light.shadowTex ? light.shadowTex->name : nullptr, true);
+                            //StaticPrepareTexturesForLightEffect(light.coronaTex, light.shadowTex, std::get<std::string>(propertyValue).c_str(), light.shadowTex ? light.shadowTex->name : nullptr, true);
                             return true;
                         }
                     }
@@ -334,7 +334,7 @@ bool CClient2DFXManager::Set2DFXProperty(C2DEffectSAInterface* effect, const e2d
                         e2dEffectTextureName shadowName;
                         if (StringToEnum(std::get<std::string>(propertyValue), shadowName))
                         {
-                            PrepareTexturesForLightEffect(light.coronaTex, light.shadowTex, light.coronaTex ? light.coronaTex->name : nullptr, std::get<std::string>(propertyValue).c_str(), true);
+                            //StaticPrepareTexturesForLightEffect(light.coronaTex, light.shadowTex, light.coronaTex ? light.coronaTex->name : nullptr, std::get<std::string>(propertyValue).c_str(), true);
                             return true;
                         }
                     }
@@ -353,9 +353,7 @@ bool CClient2DFXManager::Set2DFXProperty(C2DEffectSAInterface* effect, const e2d
             {
                 if (std::holds_alternative<std::string>(propertyValue))
                 {
-                    std::strncpy(effect->effect.particle.szName, std::get<std::string>(propertyValue).c_str(), sizeof(effect->effect.particle.szName) - 1);
-                    effect->effect.particle.szName[sizeof(effect->effect.particle.szName) - 1] = '\0';
-
+                    std::strncpy(effect->effect.particle.szName, std::get<std::string>(propertyValue).c_str(), sizeof(effect->effect.particle.szName));
                     return true;
                 }
             }
@@ -364,7 +362,16 @@ bool CClient2DFXManager::Set2DFXProperty(C2DEffectSAInterface* effect, const e2d
         }
         case e2dEffectType::ROADSIGN:
         {
-            t2dEffectRoadsign roadsign = effect->effect.roadsign;
+            t2dEffectRoadsign& roadsign = effect->effect.roadsign;
+
+            if (!roadsign.text)
+            {
+                roadsign.text = static_cast<char*>(std::malloc(roadsignTextSize));
+                if (!roadsign.text)
+                    break;
+
+                std::memset(roadsign.text, 0, roadsignTextSize);
+            }
 
             switch (property)
             {
@@ -432,14 +439,7 @@ bool CClient2DFXManager::Set2DFXProperty(C2DEffectSAInterface* effect, const e2d
                 {
                     if (std::holds_alternative<std::string>(propertyValue))
                     {
-                        if (!roadsign.text)
-                            roadsign.text = static_cast<char*>(malloc(roadsignTextSize));
-
-                        if (!roadsign.text)
-                            break;
-
-                        std::memcpy(roadsign.text, std::get<std::string>(propertyValue).c_str(), 4);
-                        roadsign.text[roadsignTextSize - 1] = '\0';
+                        std::strncpy(roadsign.text, std::get<std::string>(propertyValue).c_str(), 16);
                         return true;
                     }
 
@@ -449,14 +449,7 @@ bool CClient2DFXManager::Set2DFXProperty(C2DEffectSAInterface* effect, const e2d
                 {
                     if (std::holds_alternative<std::string>(propertyValue))
                     {
-                        if (!roadsign.text)
-                            roadsign.text = static_cast<char*>(malloc(roadsignTextSize));
-
-                        if (!roadsign.text)
-                            break;
-
-                        std::memcpy(roadsign.text + 4, std::get<std::string>(propertyValue).c_str(), 4);
-                        roadsign.text[roadsignTextSize - 1] = '\0';
+                        std::strncpy(roadsign.text+16, std::get<std::string>(propertyValue).c_str(), 16);
                         return true;
                     }
 
@@ -466,14 +459,7 @@ bool CClient2DFXManager::Set2DFXProperty(C2DEffectSAInterface* effect, const e2d
                 {
                     if (std::holds_alternative<std::string>(propertyValue))
                     {
-                        if (!roadsign.text)
-                            roadsign.text = static_cast<char*>(malloc(roadsignTextSize));
-
-                        if (!roadsign.text)
-                            break;
-
-                        std::memcpy(roadsign.text + 8, std::get<std::string>(propertyValue).c_str(), 4);
-                        roadsign.text[roadsignTextSize - 1] = '\0';
+                        std::strncpy(roadsign.text + 32, std::get<std::string>(propertyValue).c_str(), 16);
                         return true;
                     }
 
@@ -483,14 +469,7 @@ bool CClient2DFXManager::Set2DFXProperty(C2DEffectSAInterface* effect, const e2d
                 {
                     if (std::holds_alternative<std::string>(propertyValue))
                     {
-                        if (!roadsign.text)
-                            roadsign.text = static_cast<char*>(malloc(roadsignTextSize));
-
-                        if (!roadsign.text)
-                            break;
-
-                        std::memcpy(roadsign.text + 12, std::get<std::string>(propertyValue).c_str(), 4);
-                        roadsign.text[roadsignTextSize - 1] = '\0';
+                        std::strncpy(roadsign.text + 48, std::get<std::string>(propertyValue).c_str(), 16);
                         return true;
                     }
 
@@ -503,7 +482,7 @@ bool CClient2DFXManager::Set2DFXProperty(C2DEffectSAInterface* effect, const e2d
         }
         case e2dEffectType::ESCALATOR:
         {
-            t2dEffectEscalator escalator = effect->effect.escalator;
+            t2dEffectEscalator& escalator = effect->effect.escalator;
 
             switch (property)
             {

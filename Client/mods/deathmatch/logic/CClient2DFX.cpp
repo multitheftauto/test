@@ -47,6 +47,18 @@ bool CClient2DFX::Create(std::uint32_t model, const CVector& position, const e2d
     m_effectType = effect->type;
     m_model = static_cast<DWORD>(model);
 
+    switch (effect->type)
+    {
+        case e2dEffectType::ROADSIGN:
+        {
+            t2dEffectRoadsign& roadsign = effect->effect.roadsign;
+            roadsign.size = RwV2d{0, 0};
+            roadsign.rotation = RwV3d{0, 0, 0};
+            roadsign.atomic = nullptr;
+            roadsign.text = nullptr;
+        }
+    }
+
     if (!m_2DFXManager->Set2DFXProperties(effect, effectData))
         return false;
 
