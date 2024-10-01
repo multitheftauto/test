@@ -94,7 +94,7 @@ bool CLua2DFXDefs::RemoveModel2DFX(std::uint32_t modelID, std::optional<std::uin
     if (!CClient2DFXManager::IsValidModel(modelID))
         throw std::invalid_argument("Invalid model ID");
 
-    CModelInfo* modelInfo = g_pGame->GetModelInfo(static_cast<DWORD>(modelID));
+    CModelInfo* modelInfo = g_pGame->GetModelInfo(modelID);
     if (!modelInfo)
         return false;
 
@@ -104,6 +104,10 @@ bool CLua2DFXDefs::RemoveModel2DFX(std::uint32_t modelID, std::optional<std::uin
         if (std::holds_alternative<std::uint32_t>(count) && index >= std::get<std::uint32_t>(count))
             throw std::invalid_argument("Invalid effect index");
     }
+
+    // If this is custom effect destroy it (CClient2DFX)
+    if (m_p2DFXManager->TryDestroyCustom2DFXEffect(modelID, index.value_or(-1)))
+        return true;
 
     return index.has_value() ? modelInfo->Remove2DFXEffectAtIndex(index.value(), includeDefault.value_or(false)) : modelInfo->RemoveAll2DFXEffects(includeDefault.value_or(false));
 }
@@ -117,7 +121,10 @@ bool CLua2DFXDefs::ResetModel2DFX(std::uint32_t modelID, std::optional<bool> rem
     if (!modelInfo)
         return false;
 
-    return modelInfo->Reset2DFXEffects(removeCustomEffects.value_or(true));
+    if (removeCustomEffects.has_value() && removeCustomEffects.value())
+        m_p2DFXManager->TryDestroyCustom2DFXEffect(modelID, -1);
+
+    return modelInfo->Reset2DFXEffects();
 }
 
 bool CLua2DFXDefs::SetModel2DFXProperties(std::uint32_t modelID, std::uint32_t index, effectDataMap effectData)
@@ -137,13 +144,13 @@ bool CLua2DFXDefs::SetModel2DFXProperties(std::uint32_t modelID, std::uint32_t i
     if (!effect)
         return false;
 
-    const char* error = CClient2DFXManager::IsValidEffectData(effect->type, effectData);
+    const char* error = CClient2DFXManager::IsValidEffectData(reinterpret_cast<C2DEffect*>(effect)->GetEffectType(), effectData);
     if (error)
         throw LuaFunctionError(error);
 
     modelInfo->StoreDefault2DFXEffect(effect);
 
-    if (!m_p2DFXManager->Set2DFXProperties(effect, effectData))
+    if (!m_p2DFXManager->Set2DFXProperties(reinterpret_cast<C2DEffect*>(effect), effectData))
         return false;
 
     modelInfo->Update2DFXEffect(effect);
@@ -186,7 +193,7 @@ bool CLua2DFXDefs::SetModel2DFXProperty(std::uint32_t modelID, std::uint32_t ind
 
     modelInfo->StoreDefault2DFXEffect(effect);
 
-    if (!m_p2DFXManager->Set2DFXProperty(effect, property, propertyValue))
+    if (!m_p2DFXManager->Set2DFXProperty(reinterpret_cast<C2DEffect*>(effect), property, propertyValue))
         return false;
 
     modelInfo->Update2DFXEffect(effect);
@@ -224,13 +231,20 @@ bool CLua2DFXDefs::SetModel2DFXPosition(std::uint32_t modelID, std::uint32_t ind
         return false;
 
     modelInfo->StoreDefault2DFXEffect(effect);
-    m_p2DFXManager->Set2DFXPosition(effect, position);
+    m_p2DFXManager->Set2DFXPosition(reinterpret_cast<C2DEffect*>(effect), position);
+
+    modelInfo->Update2DFXEffect(effect);
     return true;
 }
 
 bool CLua2DFXDefs::Set2DFXPosition(CClient2DFX* effect, CVector position)
 {
+    CModelInfo* modelInfo = g_pGame->GetModelInfo(effect->GetModelID());
+    if (!modelInfo)
+        return false;
+
     m_p2DFXManager->Set2DFXPosition(effect->Get2DFX(), position);
+    modelInfo->Update2DFXEffect(effect->Get2DFX());
     return true;
 }
 
@@ -251,7 +265,7 @@ std::variant<bool, CLuaMultiReturn<float,float,float>> CLua2DFXDefs::GetModel2DF
     if (!effect)
         return false;
 
-    CVector* position = m_p2DFXManager->Get2DFXPosition(effect);
+    CVector* position = m_p2DFXManager->Get2DFXPosition(reinterpret_cast<C2DEffect*>(effect));
     return std::make_tuple(position->fX, position->fY, position->fZ);
 }
 
@@ -281,7 +295,7 @@ std::variant<bool, effectDataMap> CLua2DFXDefs::GetModel2DFXProperties(std::uint
     if (!effect)
         return false;
 
-    return m_p2DFXManager->Get2DFXProperties(effect);
+    return m_p2DFXManager->Get2DFXProperties(reinterpret_cast<C2DEffect*>(effect));
 }
 
 std::variant<bool, effectDataMap> CLua2DFXDefs::Get2DFXProperties(CClient2DFX* effect)
@@ -306,7 +320,7 @@ std::variant<float, bool, std::string> CLua2DFXDefs::GetModel2DFXProperty(std::u
     if (!effect)
         return false;
 
-    return m_p2DFXManager->Get2DFXProperty(effect, property);
+    return m_p2DFXManager->Get2DFXProperty(reinterpret_cast<C2DEffect*>(effect), property);
 }
 
 std::variant<float, bool, std::string> CLua2DFXDefs::Get2DFXProperty(CClient2DFX* effect, e2dEffectProperty property)
@@ -319,7 +333,7 @@ std::variant<bool, std::uint32_t> CLua2DFXDefs::GetModel2DFXCount(std::uint32_t 
     if (!CClient2DFXManager::IsValidModel(modelID))
         throw std::invalid_argument("Invalid model ID");
 
-    CModelInfo* modelInfo = g_pGame->GetModelInfo(static_cast<DWORD>(modelID));
+    CModelInfo* modelInfo = g_pGame->GetModelInfo(modelID);
     if (!modelInfo)
         return false;
 

@@ -12,9 +12,10 @@
 #pragma once
 
 #include <game/Common.h>
+#include "C2DEffectSAInterface.h"
 #include <game/CModelInfo.h>
 #include "CRenderWareSA.h"
-#include "C2DEffectSAInterface.h"
+#include "C2DEffectSA.h"
 
 class CPedModelInfoSA;
 class CPedModelInfoSAInterface;
@@ -332,6 +333,11 @@ protected:
     static std::unordered_map<DWORD, unsigned short>                             ms_OriginalObjectPropertiesGroups;
     static std::unordered_map<DWORD, std::pair<float, float>>                    ms_VehicleModelDefaultWheelSizes;
     static std::map<unsigned short, int>                                         ms_DefaultTxdIDMap;
+
+    static std::unordered_map<std::uint32_t, std::uint8_t>                                                     ms_DefaultNumOf2DFXEffects;
+    static std::unordered_map<std::uint32_t, std::unordered_map<C2DEffectSAInterface*, C2DEffectSAInterface*>> ms_DefaultEffectsMap;
+    static std::unordered_map<std::uint32_t, std::vector<C2DEffectSAInterface*>>                               ms_TempCopiesOfDefault2DFXEffects;
+
     SVehicleSupportedUpgrades                                                    m_ModelSupportedUpgrades;
 
 public:
@@ -474,14 +480,16 @@ public:
     bool                  Remove2DFX(C2DEffectSAInterface* effect, bool includeDefault);
     bool                  Remove2DFXEffectAtIndex(std::uint32_t index, bool includeDefault = false);
     bool                  RemoveAll2DFXEffects(bool includeDefault);
-    C2DEffectSAInterface* Get2DFXFromIndex(std::uint32_t index);
+    C2DEffectSA*          Get2DFXFromIndex(std::uint32_t index);
     std::uint32_t         Get2DFXCount() const { return m_pInterface ? m_pInterface->ucNumOf2DEffects : 0; }
-    void                  Update2DFXEffect(C2DEffectSAInterface* effect);
+    void                  Update2DFXEffect(C2DEffectSA* effect);
+    void                  Update2DFXEffect(C2DEffect* effect) { Update2DFXEffect(dynamic_cast<C2DEffectSA*>(effect)); }
 
     static auto GetEntitiesFromFx(std::uint32_t modelID);
 
+    void        StoreDefault2DFXEffect(C2DEffectSA* effect) { StoreDefault2DFXEffect(effect->GetInterface()); }
     void        StoreDefault2DFXEffect(C2DEffectSAInterface* effect);
-    bool        Reset2DFXEffects(bool removeCustomEffects = false);
+    bool        Reset2DFXEffects();
     static void StaticReset2DFXEffects();
 
     void CopyModified2DFXEffects();

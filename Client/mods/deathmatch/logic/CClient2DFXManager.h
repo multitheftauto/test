@@ -9,7 +9,6 @@
 #pragma once
 
 #include "CClient2DFX.h"
-#include "../game_sa/C2DEffectSAInterface.h"
 
 class CClient2DFXManager
 {
@@ -24,14 +23,16 @@ public:
 
     CClient2DFX* Add2DFX(std::uint32_t model, const CVector& position, const e2dEffectType& type, const effectDataMap& effectData);
 
-    bool Set2DFXProperties(C2DEffectSAInterface* effect, const effectDataMap& effectData);
-    effectDataMap Get2DFXProperties(C2DEffectSAInterface* effect) const;
+    bool Set2DFXProperties(C2DEffect* effect, const effectDataMap& effectData);
+    effectDataMap Get2DFXProperties(C2DEffect* effect) const;
 
-    bool Set2DFXProperty(C2DEffectSAInterface* effect, const e2dEffectProperty& property, const std::variant<bool, float, std::string>& propertyValue);
-    std::variant<float, bool, std::string> Get2DFXProperty(C2DEffectSAInterface* effect, const e2dEffectProperty& property);
+    bool Set2DFXProperty(C2DEffect* effect, const e2dEffectProperty& property, const std::variant<bool, float, std::string>& propertyValue);
+    std::variant<float, bool, std::string> Get2DFXProperty(C2DEffect* effect, const e2dEffectProperty& property);
 
-    void Set2DFXPosition(C2DEffectSAInterface* effect, const CVector& position);
-    CVector* Get2DFXPosition(C2DEffectSAInterface* effect) const;
+    void Set2DFXPosition(C2DEffect* effect, const CVector& position);
+    CVector* Get2DFXPosition(C2DEffect* effect) const;
+
+    bool TryDestroyCustom2DFXEffect(std::uint32_t modelID, std::int8_t index);
 
     static bool        IsValidModel(std::uint32_t model) noexcept;
     static const char* IsValidEffectData(const e2dEffectType& effectType, const effectDataMap& effectData);

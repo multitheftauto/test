@@ -14,13 +14,13 @@
 #include <CVector.h>
 #include "CAnimBlock.h"
 #include "Common.h"
+#include "C2DEffect.h"
 
 class CBaseModelInfoSAInterface;
 class CColModel;
 class CPedModelInfo;
 struct RpClump;
 struct RwObject;
-class C2DEffectSAInterface;
 
 class CBoundingBox
 {
@@ -83,103 +83,6 @@ enum eVehicleUpgradePosn
     VEHICLE_UPGRADE_POSN_FRONT_BUMPER,
     VEHICLE_UPGRADE_POSN_REAR_BUMPER,
     VEHICLE_UPGRADE_POSN_MISC,
-};
-
-enum class e2dEffectType : std::uint8_t
-{
-    LIGHT = 0,
-    PARTICLE,
-    UNKNOWN,
-    ATTRACTOR,
-    SUN_GLARE,
-    FURNITURE,
-    ENEX,
-    ROADSIGN,
-    TRIGGER_POINT,
-    COVER_POINT,
-    ESCALATOR,
-
-    NONE,
-};
-
-enum class e2dCoronaFlashType : std::uint8_t
-{
-    DEFAULT = 0,
-    RANDOM,
-    RANDOM_WHEN_WET,
-    ANIM_SPEED_4X,
-    ANIM_SPEED_2X,
-    ANIM_SPEED_1X,
-    WARNLIGHT, // Used on model nt_roadblockci
-    TRAFFICLIGHT,
-    TRAINCROSSING,
-    UNUSED,
-    ONLY_RAIN,
-    ON5_OFF5,
-    ON6_OFF4,
-    ON4_OFF6,
-};
-
-enum class e2dEffectProperty
-{
-    // light properties
-    FAR_CLIP_DISTANCE = 0,
-    LIGHT_RANGE,
-    CORONA_SIZE,
-    SHADOW_SIZE,
-    SHADOW_MULT,
-    FLASH_TYPE,
-    CORONA_REFLECTION,
-    FLARE_TYPE,
-    SHADOW_DISTANCE,
-    OFFSET_X,
-    OFFSET_Y,
-    OFFSET_Z,
-    COLOR,
-    CORONA_NAME,
-    SHADOW_NAME,
-    FLAGS, // for light & roadsign
-
-    // particle properties
-    PRT_NAME,
-
-    // roadsign properties
-    SIZE_X,
-    SIZE_Y,
-    ROT_X,
-    ROT_Y,
-    ROT_Z,
-    TEXT,
-    TEXT_2,
-    TEXT_3,
-    TEXT_4,
-
-    // escalator properties
-    BOTTOM_X,
-    BOTTOM_Y,
-    BOTTOM_Z,
-    TOP_X,
-    TOP_Y,
-    TOP_Z,
-    END_X,
-    END_Y,
-    END_Z,
-    DIRECTION,
-};
-
-enum class e2dAttractorType : std::int8_t
-{
-    UNDEFINED = -1,
-    ATM = 0,
-    SEAT,
-    STOP,
-    PIZZA,
-    SHELTER,
-    TRIGGER_SCRIPT,
-    LOOK_AT,
-    SCRIPTED,
-    PARK,
-    STEP,
 };
 
 struct SVehicleSupportedUpgrades
@@ -351,13 +254,15 @@ public:
     virtual bool                  Remove2DFXEffectAtIndex(std::uint32_t index, bool includeDefault = false) = 0;
     virtual bool                  RemoveAll2DFXEffects(bool includeDefault = false) = 0;
 
-    virtual C2DEffectSAInterface* Get2DFXFromIndex(std::uint32_t index) = 0;
+    virtual C2DEffectSA* Get2DFXFromIndex(std::uint32_t index) = 0;
     virtual std::uint32_t         Get2DFXCount() const = 0;
 
-    virtual void Update2DFXEffect(C2DEffectSAInterface* effect) = 0;
+    virtual void Update2DFXEffect(C2DEffectSA* effect) = 0;
+    virtual void Update2DFXEffect(C2DEffect* effect) = 0;
 
+    virtual void StoreDefault2DFXEffect(C2DEffectSA* effect) = 0;
     virtual void StoreDefault2DFXEffect(C2DEffectSAInterface* effect) = 0;
-    virtual bool Reset2DFXEffects(bool removeCustomEffects = false) = 0;
+    virtual bool Reset2DFXEffects() = 0;
 
     virtual void CopyModified2DFXEffects() = 0;
     virtual void RestoreModified2DFXEffects() = 0;

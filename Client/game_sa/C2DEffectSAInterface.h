@@ -12,8 +12,8 @@
 
 #include "game/RenderWare.h"
 #include "game/CModelInfo.h"
+#include "game/C2DEffects.h"
 #include "CObjectSA.h"
-#include "C2DEffectSA.h"
 
 struct t2dEffectLight
 {
@@ -248,8 +248,3 @@ public:
     CEntitySAInterface* entity;
     CObjectSAInterface* objects[42];
 };
-
-static void StaticPrepareTexturesForLightEffect(RwTexture*& coronaTex, RwTexture*& shadowTex, const char* coronaName, const char* shadowName, bool removeIfExist)
-{
-    C2DEffectSA::PrepareTexturesForLightEffect(coronaTex, shadowTex, coronaName, shadowName, removeIfExist);
-}

@@ -9,6 +9,8 @@
 #pragma once
 
 #include "CClientEntity.h"
+#include "game/C2DEffects.h"
+#include "game/C2DEffect.h"
 
 using effectDataMap = std::unordered_map<std::string, std::variant<bool, float, std::string>>;
 
@@ -29,13 +31,13 @@ public:
 
     bool Create(std::uint32_t model, const CVector& position, const e2dEffectType& type, const effectDataMap& effectData);
 
-    e2dEffectType  Get2DFXType() const noexcept { return m_effectType; }
-    C2DEffectSAInterface* Get2DFX() const noexcept { return m_effectInterface; }
-    std::uint32_t         GetModelID() const noexcept { return m_model; }
+    e2dEffectType   Get2DFXType() const noexcept { return m_effectType; }
+    C2DEffect*      Get2DFX() const noexcept { return m_effect; }
+    std::uint32_t   GetModelID() const noexcept { return m_model; }
 
 private:
     class CClient2DFXManager* m_2DFXManager;
-    C2DEffectSAInterface*     m_effectInterface;
+    C2DEffect*                m_effect;
     e2dEffectType             m_effectType;
     std::uint32_t             m_model;
 };
