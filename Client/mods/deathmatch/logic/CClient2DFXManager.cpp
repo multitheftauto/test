@@ -108,9 +108,11 @@ effectDataMap CClient2DFXManager::Get2DFXProperties(C2DEffect* effect) const
             MapSet(properties, "flareType", static_cast<float>(effect->GetCoronaFlareType()));
             MapSet(properties, "flags", static_cast<float>(effect->GetLightFlags()));
             MapSet(properties, "shadowDistance", static_cast<float>(effect->GetShadowDistance()));
-            MapSet(properties, "offsetX", effect->GetCoronaOffsets().fX);
-            MapSet(properties, "offsetY", effect->GetCoronaOffsets().fY);
-            MapSet(properties, "offsetZ", effect->GetCoronaOffsets().fZ);
+
+            const CVector& offsets = effect->GetCoronaOffsets();
+            MapSet(properties, "offsetX", offsets.fX);
+            MapSet(properties, "offsetY", offsets.fY);
+            MapSet(properties, "offsetZ", offsets.fZ);
 
             RwColor& color = effect->GetCoronaColor();
             int colorValue = (static_cast<int>(color.a) << 24) | (static_cast<int>(color.r) << 16) | (static_cast<int>(color.g) << 8) | static_cast<int>(color.b);
@@ -128,11 +130,14 @@ effectDataMap CClient2DFXManager::Get2DFXProperties(C2DEffect* effect) const
         }
         case e2dEffectType::ROADSIGN:
         {
-            MapSet(properties, "sizeX", effect->GetRoadsignSize().x);
-            MapSet(properties, "sizeY", effect->GetRoadsignSize().y);
-            MapSet(properties, "rotX", effect->GetRoadsignRotation().x);
-            MapSet(properties, "rotY", effect->GetRoadsignRotation().y);
-            MapSet(properties, "rotZ", effect->GetRoadsignRotation().z);
+            const RwV2d& size = effect->GetRoadsignSize();
+            const RwV3d& rot = effect->GetRoadsignRotation();
+
+            MapSet(properties, "sizeX", size.x);
+            MapSet(properties, "sizeY", size.y);
+            MapSet(properties, "rotX", rot.x);
+            MapSet(properties, "rotY", rot.y);
+            MapSet(properties, "rotZ", rot.z);
             MapSet(properties, "flags", static_cast<float>(effect->GetRoadsignFlags()));
             MapSet(properties, "text", effect->GetRoadsignText());
 
@@ -140,15 +145,19 @@ effectDataMap CClient2DFXManager::Get2DFXProperties(C2DEffect* effect) const
         }
         case e2dEffectType::ESCALATOR:
         {
-            MapSet(properties, "bottomX", effect->GetEscalatorBottom().x);
-            MapSet(properties, "bottomY", effect->GetEscalatorBottom().y);
-            MapSet(properties, "bottomZ", effect->GetEscalatorBottom().z);
-            MapSet(properties, "topX", effect->GetEscalatorTop().x);
-            MapSet(properties, "topY", effect->GetEscalatorTop().y);
-            MapSet(properties, "topZ", effect->GetEscalatorTop().z);
-            MapSet(properties, "endX", effect->GetEscalatorEnd().x);
-            MapSet(properties, "endY", effect->GetEscalatorEnd().y);
-            MapSet(properties, "endZ", effect->GetEscalatorEnd().z);
+            const RwV3d& bottom = effect->GetEscalatorBottom();
+            const RwV3d& top = effect->GetEscalatorTop();
+            const RwV3d& end = effect->GetEscalatorEnd();
+
+            MapSet(properties, "bottomX", bottom.x);
+            MapSet(properties, "bottomY", bottom.y);
+            MapSet(properties, "bottomZ", bottom.z);
+            MapSet(properties, "topX", top.x);
+            MapSet(properties, "topY", top.y);
+            MapSet(properties, "topZ", top.z);
+            MapSet(properties, "endX", end.x);
+            MapSet(properties, "endY", end.y);
+            MapSet(properties, "endZ", end.z);
             MapSet(properties, "direction", static_cast<float>(effect->GetEscalatorDirection()));
 
             break;
@@ -270,7 +279,7 @@ bool CClient2DFXManager::Set2DFXProperty(C2DEffect* effect, const e2dEffectPrope
                 {
                     if (std::holds_alternative<float>(propertyValue))
                     {
-                        CVector& offsets = effect->GetCoronaOffsets();
+                        CVector offsets = effect->GetCoronaOffsets();
                         offsets.fX = static_cast<std::int8_t>(std::get<float>(propertyValue));
 
                         effect->SetCoronaOffsets(offsets);
@@ -282,7 +291,7 @@ bool CClient2DFXManager::Set2DFXProperty(C2DEffect* effect, const e2dEffectPrope
                 {
                     if (std::holds_alternative<float>(propertyValue))
                     {
-                        CVector& offsets = effect->GetCoronaOffsets();
+                        CVector offsets = effect->GetCoronaOffsets();
                         offsets.fY = static_cast<std::int8_t>(std::get<float>(propertyValue));
 
                         effect->SetCoronaOffsets(offsets);
@@ -294,7 +303,7 @@ bool CClient2DFXManager::Set2DFXProperty(C2DEffect* effect, const e2dEffectPrope
                 {
                     if (std::holds_alternative<float>(propertyValue))
                     {
-                        CVector& offsets = effect->GetCoronaOffsets();
+                        CVector offsets = effect->GetCoronaOffsets();
                         offsets.fZ = static_cast<std::int8_t>(std::get<float>(propertyValue));
 
                         effect->SetCoronaOffsets(offsets);

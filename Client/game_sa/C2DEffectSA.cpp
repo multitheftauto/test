@@ -198,13 +198,42 @@ void C2DEffectSA::SetRoadsignText(const std::string& text, std::uint8_t line)
     if (IsValidRoadsign())
     {
         if (!m_effectInterface->effect.roadsign.text)
+        {
             m_effectInterface->effect.roadsign.text = static_cast<char*>(std::malloc(64));
+            MemSetFast(m_effectInterface->effect.roadsign.text, 0, 64);
+        }
 
         if (!m_effectInterface->effect.roadsign.text)
             return;
 
         std::strncpy(m_effectInterface->effect.roadsign.text + 16 * (line - 1), text.c_str(), 16);
     }
+}
+
+RwV2d& C2DEffectSA::GetRoadsignSize()
+{
+    if (IsValidRoadsign())
+        return m_effectInterface->effect.roadsign.size;
+
+    static RwV2d dummySize{0, 0};
+    return dummySize;
+}
+
+RwV3d& C2DEffectSA::GetRoadsignRotation()
+{
+    if (IsValidRoadsign())
+        return m_effectInterface->effect.roadsign.rotation;
+
+    static RwV3d dummyRotation{0, 0, 0};
+    return dummyRotation;
+}
+
+std::string C2DEffectSA::GetRoadsignText() const
+{
+    if (IsValidRoadsign() && m_effectInterface->effect.roadsign.text)
+        return std::string(m_effectInterface->effect.roadsign.text, 64);
+
+    return "";
 }
 
 void C2DEffectSA::SetEscalatorBottom(const RwV3d& bottom)
@@ -231,6 +260,99 @@ void C2DEffectSA::SetEscalatorDirection(std::uint8_t direction)
         m_effectInterface->effect.escalator.direction = direction;
 }
 
+RwV3d& C2DEffectSA::GetEscalatorBottom()
+{
+    if (IsValidEscalator())
+        return m_effectInterface->effect.escalator.bottom;
+
+    static RwV3d dummyBottom{0, 0, 0};
+    return dummyBottom;
+}
+
+RwV3d& C2DEffectSA::GetEscalatorTop()
+{
+    if (IsValidEscalator())
+        return m_effectInterface->effect.escalator.top;
+
+    static RwV3d dummyTop{0, 0, 0};
+    return dummyTop;
+}
+
+RwV3d& C2DEffectSA::GetEscalatorEnd()
+{
+    if (IsValidEscalator())
+        return m_effectInterface->effect.escalator.end;
+
+    static RwV3d dummyEnd{0, 0, 0};
+    return dummyEnd;
+}
+
+RpAtomic* C2DEffectSA::Roadsign_CreateAtomic(const RwV3d& position, const RwV3d& rotation, float sizeX, float sizeY, std::uint32_t numLines, char* line1, char* line2, char* line3, char* line4, std::uint32_t numLetters, std::uint8_t palleteID)
+{
+    // Call CCustomRoadsignMgr::CreateRoadsignAtomic
+    RpAtomic* atomic = ((RpAtomic*(__cdecl*)(float, float, std::int32_t, char*, char*, char*, char*, std::int32_t, std::uint8_t))0x6FF2D0)(sizeX, sizeY, numLines, line1, line2, line3, line4, numLetters, palleteID);
+    RwFrame* frame = RpAtomicGetFrame(atomic);
+    RwFrameSetIdentity(frame);
+
+    const RwV3d axis0{1.0f, 0.0f, 0.0f}, axis1{0.0f, 1.0f, 0.0f}, axis2{0.0f, 0.0f, 1.0f};
+    RwFrameRotate(frame, &axis2, rotation.z, rwCOMBINEREPLACE);
+    RwFrameRotate(frame, &axis0, rotation.x, rwCOMBINEPOSTCONCAT);
+    RwFrameRotate(frame, &axis1, rotation.y, rwCOMBINEPOSTCONCAT);
+
+    RwFrameTranslate(frame, &position, TRANSFORM_AFTER);
+    RwFrameUpdateObjects(frame);
+
+    return atomic;
+}
+
+std::uint32_t C2DEffectSA::Roadsign_GetPalleteIDFromFlags(std::uint8_t flags)
+{
+    std::uint32_t id = (flags >> 4) & 3;
+    return id <= 3 ? id : 0;
+}
+
+std::uint32_t C2DEffectSA::Roadsign_GetNumLettersFromFlags(std::uint8_t flags)
+{
+    std::uint32_t letters = (flags >> 2) & 3;
+    switch (letters)
+    {
+        case 1u:
+            return 2;
+        case 2u:
+            return 4;
+        case 3u:
+            return 8;
+        default:
+            return 16;
+    }
+}
+
+std::uint32_t C2DEffectSA::Roadsign_GetNumLinesFromFlags(std::uint8_t flags)
+{
+    std::uint32_t lines = flags & 3;
+    return (lines <= 3 && lines > 0) ? lines : 4;
+}
+
+void C2DEffectSA::Roadsign_DestroyAtomic(C2DEffectSAInterface* effect)
+{
+    if (!effect)
+        return;
+
+    t2dEffectRoadsign& roadsign = effect->effect.roadsign;
+    if (roadsign.atomic)
+    {
+        RwFrame* frame = RpAtomicGetFrame(roadsign.atomic);
+        if (frame)
+        {
+            RpAtomicSetFrame(roadsign.atomic, nullptr);
+            RwFrameDestroy(frame);
+        }
+
+        RpAtomicDestroy(roadsign.atomic);
+        roadsign.atomic = nullptr;
+    }
+}
+
 C2DEffectSAInterface* C2DEffectSA::CreateCopy(C2DEffectSAInterface* effect)
 {
     C2DEffectSAInterface* copy = new C2DEffectSAInterface();
@@ -250,17 +372,16 @@ C2DEffectSAInterface* C2DEffectSA::CreateCopy(C2DEffectSAInterface* effect)
         copy->effect.roadsign.text = static_cast<char*>(std::malloc(64));
         if (copy->effect.roadsign.text)
         {
-            std::memset(copy->effect.roadsign.text, 0, 64);
-            std::strncpy(copy->effect.roadsign.text, effect->effect.roadsign.text, 64);
-        }
+            MemSetFast(copy->effect.roadsign.text, 0, 64);
+            MemCpyFast(copy->effect.roadsign.text, effect->effect.roadsign.text, 64);
 
-        copy->effect.roadsign.atomic = RpAtomicClone(effect->effect.roadsign.atomic);
+            copy->effect.roadsign.atomic = Roadsign_CreateAtomic(copy->position, copy->effect.roadsign.rotation, copy->effect.roadsign.size.x, copy->effect.roadsign.size.y, Roadsign_GetNumLinesFromFlags(copy->effect.roadsign.flags), &copy->effect.roadsign.text[0], &copy->effect.roadsign.text[16], &copy->effect.roadsign.text[32], &copy->effect.roadsign.text[48], Roadsign_GetNumLettersFromFlags(copy->effect.roadsign.flags), Roadsign_GetPalleteIDFromFlags(copy->effect.roadsign.flags));
+        }
     }
 
     return copy;
 }
 
-// C2DEffect::Shutdown causes random unknown crash in ntdll.dll so we need own function
 void C2DEffectSA::Shutdown(C2DEffectSAInterface* effect)
 {
     if (!effect)
@@ -269,24 +390,12 @@ void C2DEffectSA::Shutdown(C2DEffectSAInterface* effect)
     if (effect->type == e2dEffectType::ROADSIGN)
     {
         t2dEffectRoadsign& roadsign = effect->effect.roadsign;
+        Roadsign_DestroyAtomic(effect);
 
         if (roadsign.text)
         {
             std::free(roadsign.text);
             roadsign.text = nullptr;
-        }
-
-        if (roadsign.atomic)
-        {
-            RwFrame* frame = RpAtomicGetFrame(roadsign.atomic);
-            if (frame)
-            {
-                RpAtomicSetFrame(roadsign.atomic, nullptr);
-                RwFrameDestroy(frame);
-            }
-
-            RpAtomicDestroy(roadsign.atomic);
-            roadsign.atomic = nullptr;
         }
     }
     else if (effect->type == e2dEffectType::LIGHT)

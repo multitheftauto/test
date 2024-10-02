@@ -2157,6 +2157,20 @@ void CModelInfoSA::Update2DFXEffect(C2DEffectSA* effect)
                 // Call Fx_c::CreateEntityFx
                 ((void(__thiscall*)(CFxSAInterface*, CEntitySAInterface*, const char*, RwV3d*, RwMatrix*))FUNC_Fx_c_CreateEntityFx)(fx, entity, effectInterface->effect.particle.szName, &effectInterface->position, matrixTransform);
             }
+
+            break;
+        }
+        case e2dEffectType::ROADSIGN:
+        {
+            t2dEffectRoadsign& roadsign = effectInterface->effect.roadsign;
+            C2DEffectSA::Roadsign_DestroyAtomic(effectInterface);
+
+            std::uint32_t numLines = C2DEffectSA::Roadsign_GetNumLinesFromFlags(roadsign.flags);
+            std::uint32_t numLetters = C2DEffectSA::Roadsign_GetNumLettersFromFlags(roadsign.flags);
+            std::uint8_t  palleteID = C2DEffectSA::Roadsign_GetPalleteIDFromFlags(roadsign.flags);
+            roadsign.atomic = C2DEffectSA::Roadsign_CreateAtomic(effectInterface->position, roadsign.rotation, roadsign.size.x, roadsign.size.y, numLines, &roadsign.text[0], &roadsign.text[16], &roadsign.text[32], &roadsign.text[48], numLetters, palleteID);
+
+            break;
         }
     }
 }
@@ -2301,6 +2315,7 @@ bool CModelInfoSA::Remove2DFX(C2DEffectSAInterface* effect, bool includeDefault)
 
             // Prevent creation when stream in but keep in memory so we can restore it later
             effect->type = e2dEffectType::NONE;
+            break;
         }
         case e2dEffectType::SUN_GLARE:
         {
@@ -2318,8 +2333,11 @@ bool CModelInfoSA::Remove2DFX(C2DEffectSAInterface* effect, bool includeDefault)
         MapGet(ms_NumOfCustom2DFXEffects, m_pInterface)--;
         ms_Custom2DFXEffects.erase(it);
 
-        delete effect;
-        effect = nullptr;
+        if (effect)
+        {
+            delete effect;
+            effect = nullptr;
+        }
     }
 }
 
@@ -2432,8 +2450,14 @@ void CModelInfoSA::RestoreModified2DFXEffects()
         if (tempVec && (*tempVec)[i])
         {
             MemCpyFast(effectInterface, (*tempVec)[i], sizeof(C2DEffectSAInterface));
-            C2DEffectSA::SafeDelete2DFXEffect((*tempVec)[i]);
+            effectInterface->effect.roadsign.text = static_cast<char*>(std::malloc(64));
+            if (effectInterface->effect.roadsign.text)
+            {
+                MemSetFast(effectInterface->effect.roadsign.text, 0, 64);
+                MemCpyFast(effectInterface->effect.roadsign.text, (*tempVec)[i]->effect.roadsign.text, 64);
+            }
 
+            C2DEffectSA::SafeDelete2DFXEffect((*tempVec)[i]);
             Update2DFXEffect(effect);
         }
     }

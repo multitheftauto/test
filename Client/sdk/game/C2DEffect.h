@@ -54,7 +54,7 @@ public:
     virtual std::uint8_t        GetCoronaFlareType() const = 0;
     virtual std::uint16_t       GetLightFlags() const = 0;
     virtual std::int8_t         GetShadowDistance() const = 0;
-    virtual CVector GetCoronaOffsets() const = 0;
+    virtual CVector             GetCoronaOffsets() const = 0;
     virtual RwColor            GetCoronaColor() const = 0;
     virtual std::string        GetCoronaTexture() const = 0;
     virtual std::string        GetShadowTexture() const = 0;
@@ -74,8 +74,8 @@ public:
     virtual void SetRoadsignText(const std::string& text, std::uint8_t line) = 0;
 
     // Get
-    virtual RwV2d GetRoadsignSize() const = 0;
-    virtual RwV3d GetRoadsignRotation() const = 0;
+    virtual RwV2d& GetRoadsignSize() = 0;
+    virtual RwV3d& GetRoadsignRotation() = 0;
     virtual std::uint16_t GetRoadsignFlags() const = 0;
     virtual std::string   GetRoadsignText() const = 0;
 
@@ -87,9 +87,9 @@ public:
     virtual void SetEscalatorDirection(std::uint8_t direction) = 0;
 
     // Get
-    virtual RwV3d GetEscalatorBottom() const = 0;
-    virtual RwV3d GetEscalatorTop() const = 0;
-    virtual RwV3d GetEscalatorEnd() const = 0;
+    virtual RwV3d& GetEscalatorBottom() = 0;
+    virtual RwV3d& GetEscalatorTop() = 0;
+    virtual RwV3d& GetEscalatorEnd() = 0;
     virtual std::uint8_t GetEscalatorDirection() const = 0;
 
 };

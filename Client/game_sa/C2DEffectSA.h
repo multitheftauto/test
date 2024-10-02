@@ -41,6 +41,7 @@ public:
     ~C2DEffectSA() = default;
 
     C2DEffectSAInterface* GetInterface() noexcept { return m_effectInterface; }
+    e2dEffectType GetEffectType() override { return m_effectInterface ? m_effectInterface->type : e2dEffectType::NONE; }
 
     bool IsValidLight() const noexcept { return m_effectInterface && m_effectInterface->type == e2dEffectType::LIGHT; };
     bool IsValidRoadsign() const noexcept { return m_effectInterface && m_effectInterface->type == e2dEffectType::ROADSIGN; }
@@ -80,7 +81,7 @@ public:
     std::uint8_t       GetCoronaFlareType() const override { return IsValidLight() ? m_effectInterface->effect.light.coronaFlareType : 0; }
     std::uint16_t      GetLightFlags() const override { return IsValidLight() ? m_effectInterface->effect.light.flags : 0; }
     std::int8_t        GetShadowDistance() const override { return IsValidLight() ? m_effectInterface->effect.light.shadowZDistance : 0; }
-    CVector            GetCoronaOffsets() const override;
+    CVector             GetCoronaOffsets() const override;
     RwColor            GetCoronaColor() const override { return IsValidLight() ? m_effectInterface->effect.light.color : RwColor{0,0,0,0}; }
     std::string        GetCoronaTexture() const override { return IsValidLight() ? (m_effectInterface->effect.light.coronaTex ? m_effectInterface->effect.light.coronaTex->name : "") : ""; }
     std::string GetShadowTexture() const override { return IsValidLight() ? (m_effectInterface->effect.light.shadowTex ? m_effectInterface->effect.light.shadowTex->name : "") : ""; }
@@ -100,10 +101,10 @@ public:
     void SetRoadsignText(const std::string& text, std::uint8_t line) override;
 
     // Get
-    RwV2d GetRoadsignSize() const override { return IsValidRoadsign() ? m_effectInterface->effect.roadsign.size : RwV2d{0,0}; }
-    RwV3d GetRoadsignRotation() const override { return IsValidRoadsign() ? m_effectInterface->effect.roadsign.rotation : RwV3d{0,0,0}; }
+    RwV2d&        GetRoadsignSize() override;
+    RwV3d&        GetRoadsignRotation() override;
     std::uint16_t GetRoadsignFlags() const override { return IsValidRoadsign() ? m_effectInterface->effect.roadsign.flags : 0; }
-    std::string   GetRoadsignText() const override { return IsValidRoadsign() ? (m_effectInterface->effect.roadsign.text ? std::string(m_effectInterface->effect.roadsign.text, strnlen(m_effectInterface->effect.roadsign.text, 64)) : "") : ""; }
+    std::string   GetRoadsignText() const override;
 
     // Escalator properties
     // Set
@@ -113,12 +114,16 @@ public:
     void SetEscalatorDirection(std::uint8_t direction) override;
 
     // Get
-    RwV3d GetEscalatorBottom() const override { return IsValidEscalator() ? m_effectInterface->effect.escalator.bottom : RwV3d{0, 0, 0}; }
-    RwV3d GetEscalatorTop() const override { return IsValidEscalator() ? m_effectInterface->effect.escalator.top : RwV3d{0, 0, 0}; }
-    RwV3d GetEscalatorEnd() const override { return IsValidEscalator() ? m_effectInterface->effect.escalator.end : RwV3d{0, 0, 0}; }
+    RwV3d&       GetEscalatorBottom() override;
+    RwV3d&       GetEscalatorTop() override;
+    RwV3d&       GetEscalatorEnd() override;
     std::uint8_t GetEscalatorDirection() const override { return IsValidEscalator() ? m_effectInterface->effect.escalator.direction : 0; }
 
-    e2dEffectType GetEffectType() override { return m_effectInterface ? m_effectInterface->type : e2dEffectType::NONE; }
+    static RpAtomic*     Roadsign_CreateAtomic(const RwV3d& position, const RwV3d& rotation, float sizeX, float sizeY, std::uint32_t numLines, char* line1, char* line2, char* line3, char* line4, std::uint32_t numLetters, std::uint8_t palleteID);
+    static std::uint32_t Roadsign_GetPalleteIDFromFlags(std::uint8_t flags);
+    static std::uint32_t Roadsign_GetNumLettersFromFlags(std::uint8_t flags);
+    static std::uint32_t Roadsign_GetNumLinesFromFlags(std::uint8_t flags);
+    static void Roadsign_DestroyAtomic(C2DEffectSAInterface* effect);
 
     static C2DEffectSAInterface* CreateCopy(C2DEffectSAInterface* effect);
 
