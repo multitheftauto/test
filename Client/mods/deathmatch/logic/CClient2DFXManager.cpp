@@ -162,8 +162,6 @@ effectDataMap CClient2DFXManager::Get2DFXProperties(C2DEffect* effect) const
 
             break;
         }
-        default:
-            break;
     }
 
     return properties;
@@ -352,8 +350,6 @@ bool CClient2DFXManager::Set2DFXProperty(C2DEffect* effect, const e2dEffectPrope
 
                     break;
                 }
-                default:
-                    break;
             }
 
             break;
@@ -485,8 +481,6 @@ bool CClient2DFXManager::Set2DFXProperty(C2DEffect* effect, const e2dEffectPrope
 
                     break;
                 }
-                default:
-                    break;
             }
             break;
         }
@@ -616,8 +610,6 @@ bool CClient2DFXManager::Set2DFXProperty(C2DEffect* effect, const e2dEffectPrope
 
             break;
         }
-        default:
-            break;
     }
 
     return false;
@@ -735,8 +727,6 @@ std::variant<float, bool, std::string> CClient2DFXManager::Get2DFXProperty(C2DEf
 
             break;
         }
-        default:
-            break;
     }
 
     return false;

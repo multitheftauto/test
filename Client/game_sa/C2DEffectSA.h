@@ -51,7 +51,7 @@ public:
     void Destroy() const;
 
     void SetPosition(const CVector& position) override;
-    CVector& GetPosition() override;
+    CVector& GetPosition() const override;
 
     // Light properties
     // Set

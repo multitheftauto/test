@@ -35,7 +35,7 @@ void C2DEffectSA::SetPosition(const CVector& position)
         m_effectInterface->position = RwV3d{position.fX, position.fY, position.fZ};
 }
 
-CVector& C2DEffectSA::GetPosition()
+CVector& C2DEffectSA::GetPosition() const
 {
     if (m_effectInterface)
         return CVector(m_effectInterface->position.x, m_effectInterface->position.y, m_effectInterface->position.z);

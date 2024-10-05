@@ -22,7 +22,7 @@ class C2DEffect
 {
 public:
     virtual void SetPosition(const CVector& position) = 0;
-    virtual CVector& GetPosition() = 0;
+    virtual CVector& GetPosition() const = 0;
 
     virtual e2dEffectType GetEffectType() = 0;
 
